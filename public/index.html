@@ -1,5 +1,84 @@
 <!DOCTYPE html>
 <html lang="en">
+  <style>
+      /* ==========================================
+       * 🌟 FlareDrive 极简毛玻璃高级皮肤
+       * ========================================== */
+      
+      /* 全局底色重塑：告别死白，换上优雅的渐变微光背景 */
+      body {
+        background: linear-gradient(135deg, #f5f7fa 0%, #e4e8f0 100%) !important;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif !important;
+        color: #333333 !important;
+        min-height: 100vh;
+      }
+
+      /* 容器与卡片重构：强制所有表格或列表容器变成圆角毛玻璃悬浮舱 */
+      #root table, .table, .file-list, [class*="list-container"], [class*="card"] {
+        background: rgba(255, 255, 255, 0.75) !important;
+        backdrop-filter: blur(20px) !important;
+        -webkit-backdrop-filter: blur(20px) !important;
+        border-radius: 16px !important;
+        border: 1px solid rgba(255, 255, 255, 0.5) !important;
+        box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.04) !important;
+        padding: 12px !important;
+        overflow: hidden;
+      }
+
+      /* 导航条 / 头部美化 */
+      header, nav, [class*="navbar"], [class*="header"] {
+        background: rgba(255, 255, 255, 0.8) !important;
+        backdrop-filter: blur(10px) !important;
+        -webkit-backdrop-filter: blur(10px) !important;
+        border-bottom: 1px solid rgba(0, 0, 0, 0.05) !important;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.02) !important;
+      }
+
+      /* 列表行hover动画：死板的行选中变成丝滑的淡入微沉浸感 */
+      tr, [class*="file-item"], [class*="row"] {
+        transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
+        border-radius: 8px !important;
+      }
+      tr:hover, [class*="file-item"]:hover, [class*="row"]:hover {
+        background: rgba(255, 255, 255, 0.9) !important;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03) !important;
+      }
+
+      /* 丑陋的默认按钮整容：换成高级纯黑或深邃色块 */
+      button, .btn, [class*="button"] {
+        border-radius: 10px !important;
+        border: none !important;
+        padding: 8px 16px !important;
+        font-weight: 500 !important;
+        transition: all 0.2s ease !important;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05) !important;
+      }
+      
+      /* 上传或主按钮触发高亮 */
+      button[class*="primary"], .btn-primary {
+        background: #111111 !important;
+        color: #ffffff !important;
+      }
+      button:hover, .btn:hover {
+        transform: scale(1.02);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1) !important;
+      }
+
+      /* 输入框去黑边 */
+      input[type="text"], input[type="search"], textarea {
+        border-radius: 10px !important;
+        border: 1px solid rgba(0, 0, 0, 0.1) !important;
+        padding: 8px 14px !important;
+        background: rgba(255, 255, 255, 0.6) !important;
+        transition: all 0.2s !important;
+      }
+      input:focus {
+        border-color: #111111 !important;
+        background: #ffffff !important;
+        outline: none !important;
+      }
+    </style>
   <head>
     <meta charset="utf-8" />
     <link rel="icon" href="%PUBLIC_URL%/favicon.png" />
