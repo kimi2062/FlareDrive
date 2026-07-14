@@ -9,91 +9,93 @@
     <link rel="apple-touch-icon" href="%PUBLIC_URL%/logo192.png" />
     <link rel="manifest" href="%PUBLIC_URL%/manifest.json" />
     <title>Flare Drive</title>
-
-    <!-- 🌟 把那一整段 <style> 皮肤代码粘贴在这里 🌟 -->
-<style>
-      /* ==========================================
-       * 🌟 FlareDrive 极简毛玻璃高级皮肤
-       * ========================================== */
-      
-      /* 全局底色重塑：告别死白，换上优雅的渐变微光背景 */
-      body {
-        background: linear-gradient(135deg, #f5f7fa 0%, #e4e8f0 100%) !important;
-        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif !important;
-        color: #333333 !important;
-        min-height: 100vh;
-      }
-
-      /* 容器与卡片重构：强制所有表格或列表容器变成圆角毛玻璃悬浮舱 */
-      #root table, .table, .file-list, [class*="list-container"], [class*="card"] {
-        background: rgba(255, 255, 255, 0.75) !important;
-        backdrop-filter: blur(20px) !important;
-        -webkit-backdrop-filter: blur(20px) !important;
-        border-radius: 16px !important;
-        border: 1px solid rgba(255, 255, 255, 0.5) !important;
-        box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.04) !important;
-        padding: 12px !important;
-        overflow: hidden;
-      }
-
-      /* 导航条 / 头部美化 */
-      header, nav, [class*="navbar"], [class*="header"] {
-        background: rgba(255, 255, 255, 0.8) !important;
-        backdrop-filter: blur(10px) !important;
-        -webkit-backdrop-filter: blur(10px) !important;
-        border-bottom: 1px solid rgba(0, 0, 0, 0.05) !important;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.02) !important;
-      }
-
-      /* 列表行hover动画：死板的行选中变成丝滑的淡入微沉浸感 */
-      tr, [class*="file-item"], [class*="row"] {
-        transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
-        border-radius: 8px !important;
-      }
-      tr:hover, [class*="file-item"]:hover, [class*="row"]:hover {
-        background: rgba(255, 255, 255, 0.9) !important;
-        transform: translateY(-1px);
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03) !important;
-      }
-
-      /* 丑陋的默认按钮整容：换成高级纯黑或深邃色块 */
-      button, .btn, [class*="button"] {
-        border-radius: 10px !important;
-        border: none !important;
-        padding: 8px 16px !important;
-        font-weight: 500 !important;
-        transition: all 0.2s ease !important;
-        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05) !important;
-      }
-      
-      /* 上传或主按钮触发高亮 */
-      button[class*="primary"], .btn-primary {
-        background: #111111 !important;
-        color: #ffffff !important;
-      }
-      button:hover, .btn:hover {
-        transform: scale(1.02);
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1) !important;
-      }
-
-      /* 输入框去黑边 */
-      input[type="text"], input[type="search"], textarea {
-        border-radius: 10px !important;
-        border: 1px solid rgba(0, 0, 0, 0.1) !important;
-        padding: 8px 14px !important;
-        background: rgba(255, 255, 255, 0.6) !important;
-        transition: all 0.2s !important;
-      }
-      input:focus {
-        border-color: #111111 !important;
-        background: #ffffff !important;
-        outline: none !important;
-      }
-    </style>
-
-  </head> <!-- 👈 就是在这个标签的正上方 -->
+  </head>
   <body>
     <noscript>You need to enable JavaScript to run this app.</noscript>
     <div id="root"></div>
+
+    <!-- 🌟 终极动态换肤脚本：等 React 加载完后，强行在最顶层灌入新 UI 🌟 -->
+    <script>
+      (function() {
+        const cssStyle = `
+          /* 全局高档微光底色 */
+          body {
+            background: linear-gradient(135deg, #f5f7fa 0%, #e4e8f0 100%) !important;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
+          }
+          
+          /* 强行接管所有卡片、表格、容器，全部变成苹果风毛玻璃 */
+          div[class*="container"], div[class*="Card"], div[class*="card"], table, .table, [class*="list"] {
+            background: rgba(255, 255, 255, 0.78) !important;
+            backdrop-filter: blur(25px) !important;
+            -webkit-backdrop-filter: blur(25px) !important;
+            border-radius: 18px !important;
+            border: 1px solid rgba(255, 255, 255, 0.6) !important;
+            box-shadow: 0 8px 32px rgba(31, 38, 135, 0.05) !important;
+          }
+
+          /* 头部导航条美化 */
+          header, nav, [class*="Navbar"], [class*="navbar"], [class*="Header"] {
+            background: rgba(255, 255, 255, 0.82) !important;
+            backdrop-filter: blur(15px) !important;
+            -webkit-backdrop-filter: blur(15px) !important;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.04) !important;
+          }
+
+          /* 按钮整容成高级冷酷纯黑 */
+          button, .btn, [class*="button"], [class*="Button"] {
+            border-radius: 12px !important;
+            font-weight: 500 !important;
+            border: none !important;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+            background: #111111 !important;
+            color: #ffffff !important;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08) !important;
+          }
+          button:hover, .btn:hover {
+            transform: translateY(-1px) scale(1.02) !important;
+            box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15) !important;
+          }
+
+          /* 文件列表行悬浮动画 */
+          tr:hover, [class*="row"]:hover, [class*="item"]:hover {
+            background: rgba(255, 255, 255, 0.95) !important;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.02) !important;
+          }
+
+          /* 输入框扁平化去黑边 */
+          input, textarea, select {
+            border-radius: 10px !important;
+            border: 1px solid rgba(0, 0, 0, 0.08) !important;
+            background: rgba(255, 255, 255, 0.5) !important;
+            padding: 8px 12px !important;
+          }
+          input:focus {
+            border-color: #111111 !important;
+            background: #ffffff !important;
+            outline: none !important;
+          }
+        `;
+
+        // 核心轰炸逻辑：定时检查页面，确保这套样式永远呆在页面的最顶层
+        function injectVibe() {
+          let styleEl = document.getElementById('ikimi-royal-skin');
+          if (!styleEl) {
+            styleEl = document.createElement('style');
+            styleEl.id = 'ikimi-royal-skin';
+            styleEl.innerHTML = cssStyle;
+            document.head.appendChild(styleEl);
+          } else {
+            // 如果被 React 恶意挤到下面去了，强行把它挪回最底部实现绝对覆盖
+            document.head.appendChild(styleEl);
+          }
+        }
+
+        // 页面进来立刻执行，并高频守护 3 秒防止被 React 编译代码冲掉
+        injectVibe();
+        const guardTimer = setInterval(injectVibe, 100);
+        setTimeout(() => clearInterval(guardTimer), 4000);
+      })();
+    </script>
   </body>
 </html>
