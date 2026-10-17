@@ -10,6 +10,8 @@
       #root-override { max-width: 1100px; margin: 0 auto; padding: 40px 20px; }
       .header { display: flex; justify-content: space-between; border-bottom: 1px solid #222533; padding-bottom: 15px; margin-bottom: 25px; align-items: center; }
       .logo { font-size: 22px; font-weight: 700; color: #3b82f6; }
+      .header-actions { display: flex; align-items: center; gap: 12px; }
+      .user-status { font-size: 13px; color: #7f8c8d; }
       
       /* 工具栏 & 面包屑 */
       .toolbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; background: #14161f; padding: 12px 18px; border-radius: 10px; border: 1px solid #222533; }
@@ -20,10 +22,10 @@
       .tool-actions { display: flex; gap: 10px; }
       
       /* 上传与操作按钮 */
-      .ctrl-btn { background: #222533; color: #fff; border: 1px solid #2e3446; padding: 7px 14px; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 500; display: inline-flex; align-items: center; gap: 6px; }
+      .ctrl-btn { background: #222533; color: #fff; border: 1px solid #2e3446; padding: 7px 14px; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 500; display: inline-flex; align-items: center; gap: 6px; transition: 0.2s; }
       .ctrl-btn:hover { background: #3b82f6; border-color: #3b82f6; }
-      .ctrl-btn.primary { background: #3b82f6; border-color: #3b82f6; }
-      .ctrl-btn.primary:hover { background: #2563eb; }
+      .ctrl-btn.danger { background: #222533; color: #ef4444; border-color: #4b2328; }
+      .ctrl-btn.danger:hover { background: #ef4444; color: #fff; border-color: #ef4444; }
 
       /* 极速上传舱 */
       .upload-panel { background: #14161f; border: 2px dashed #222533; border-radius: 12px; padding: 22px; text-align: center; margin-bottom: 20px; cursor: pointer; transition: 0.2s; display: block; }
@@ -63,10 +65,13 @@
     <div id="root-override">
       <div class="header">
         <div class="logo">📂 Titan Drive</div>
-        <div style="font-size:13px; color:#7f8c8d">原生 WebDAV 存储节点已连接</div>
+        <div class="header-actions">
+          <span class="user-status" id="login-status-label">状态：访客受限模式</span>
+          <button class="ctrl-btn" id="auth-btn" onclick="handleAuthBtnClick()">🔑 管理员登录</button>
+        </div>
       </div>
       
-      <!-- 工具栏：面包屑路径导航 + 新建文件夹 + 上传文件夹 -->
+      <!-- 工具栏 -->
       <div class="toolbar">
         <div class="breadcrumbs" id="breadcrumb-box">
           <span class="crumb-item" onclick="navigateTo('/')">根目录</span>
@@ -77,7 +82,7 @@
         </div>
       </div>
 
-      <!-- 单文件上传舱 -->
+      <!-- 上传舱 -->
       <label class="upload-panel" for="hidden-file-input">
         <input type="file" id="hidden-file-input" style="display:none;" multiple onclick="event.stopPropagation()" onchange="handleFilesUpload(this.files); this.value='';" />
         <input type="file" id="hidden-folder-input" style="display:none;" webkitdirectory directory multiple onclick="event.stopPropagation()" onchange="handleFolderUpload(this.files); this.value='';" />
@@ -112,14 +117,14 @@
       </table>
     </div>
 
-    <!-- 弹窗 1：密码核验拦截 -->
+    <!-- 弹窗 1：密码验证拦截 -->
     <div id="lock-modal" class="modal">
       <div class="modal-box">
         <h3 id="m-title" style="margin:0;">权限安全拦截</h3>
-        <input type="password" id="m-pwd" class="m-input" placeholder="请输入访问密钥..." />
+        <input type="password" id="m-pwd" class="m-input" placeholder="请输入管理密码..." />
         <div style="text-align:right;">
           <button class="action-btn" onclick="closeBox('lock-modal')">取消</button>
-          <button class="action-btn" style="background:#3b82f6 !important" id="m-ok">核验密码</button>
+          <button class="action-btn" style="background:#3b82f6 !important" id="m-ok">确认验证</button>
         </div>
       </div>
     </div>
@@ -128,7 +133,7 @@
     <div id="folder-modal" class="modal">
       <div class="modal-box">
         <h3 style="margin:0;">新建文件夹</h3>
-        <input type="text" id="new-folder-name" class="m-input" placeholder="请输入文件夹名称（如：资料备份）" />
+        <input type="text" id="new-folder-name" class="m-input" placeholder="请输入文件夹名称（如：备份资料）" />
         <div style="text-align:right;">
           <button class="action-btn" onclick="closeBox('folder-modal')">取消</button>
           <button class="action-btn" style="background:#3b82f6 !important" onclick="submitNewFolder()">确认创建</button>
@@ -140,7 +145,7 @@
     <div id="move-modal" class="modal">
       <div class="modal-box">
         <h3 style="margin:0;">移动至目标路径</h3>
-        <p style="font-size:12px;color:#7f8c8d;margin:8px 0 0 0;">输入目标目录绝对路径，以 / 结尾（例：/照片/ 或 / 为根目录）</p>
+        <p style="font-size:12px;color:#7f8c8d;margin:8px 0 0 0;">输入目标目录路径，以 / 结尾（例：/文档/ 或 /）</p>
         <input type="text" id="move-dest-input" class="m-input" placeholder="/" />
         <div style="text-align:right;">
           <button class="action-btn" onclick="closeBox('move-modal')">取消</button>
@@ -160,11 +165,78 @@
     <script>
       (function() {
         const SEC_KEY = "aWtpbWk1MjA="; 
-        let locks = JSON.parse(localStorage.getItem('hd_locks') || '{}');
-        let currentPath = "/"; // 当前工作目录，始终以 / 开头和结尾
+        const LOCKS_STORAGE_KEY = "titan_drive_locks_store";
+        const SESSION_AUTH_KEY = "titan_drive_is_admin";
+
+        // 核心锁字典：保证从 localStorage 中稳定提取
+        let locks = {};
+        try {
+          locks = JSON.parse(localStorage.getItem(LOCKS_STORAGE_KEY)) || {};
+        } catch(e) {
+          locks = {};
+        }
+
+        let currentPath = "/";
         let files = [];
         let currentAuthAction = null;
         let movingTargetItem = null;
+
+        // 统一保存锁状态至永久存储
+        function persistLocks() {
+          localStorage.setItem(LOCKS_STORAGE_KEY, JSON.stringify(locks));
+        }
+
+        // 判断当前会话是否为已认证的管理员
+        function isAdminLoggedIn() {
+          return sessionStorage.getItem(SESSION_AUTH_KEY) === "true";
+        }
+
+        // 刷新右上角管理态 UI
+        function updateAuthUI() {
+          const statusLabel = document.getElementById('login-status-label');
+          const authBtn = document.getElementById('auth-btn');
+          if (isAdminLoggedIn()) {
+            statusLabel.innerText = "状态：管理员已就绪 🟢";
+            statusLabel.style.color = "#10b981";
+            authBtn.className = "ctrl-btn danger";
+            authBtn.innerText = "🚪 退出登录";
+          } else {
+            statusLabel.innerText = "状态：访客受限模式 🔒";
+            statusLabel.style.color = "#7f8c8d";
+            authBtn.className = "ctrl-btn";
+            authBtn.innerText = "🔑 管理员登录";
+          }
+        }
+
+        // 点击右上角按钮（登录 / 退出登录）
+        window.handleAuthBtnClick = function() {
+          if (isAdminLoggedIn()) {
+            if (confirm("确定要退出管理员模式吗？退出后访问加锁文件将重新需要密码。")) {
+              sessionStorage.removeItem(SESSION_AUTH_KEY);
+              updateAuthUI();
+              drawList();
+              alert("已成功退出登录，进入安全防护状态。");
+            }
+          } else {
+            currentAuthAction = (authKey) => {
+              if (authKey === SEC_KEY) {
+                sessionStorage.setItem(SESSION_AUTH_KEY, "true");
+                updateAuthUI();
+                drawList();
+                alert("🎉 欢迎回来，管理员！所有加锁文件已开放直接访问。");
+              } else {
+                alert("🚨 密码错误，无法验证身份！");
+              }
+            };
+            openGate("管理员身份认证");
+          }
+        };
+
+        // 关键：标准化文件唯一标识（无论在哪个子目录下，都拼接为绝对路径 /xxx/yyy）
+        function getNormalizedKey(name) {
+          let p = (currentPath + name).replace(/\/+/g, '/');
+          return p.startsWith('/') ? p : '/' + p;
+        }
 
         function formatBytes(bytes) {
           if (!bytes || bytes === 0) return '-';
@@ -174,14 +246,12 @@
           return (bytes / Math.pow(k, i)).toFixed(1) + ' ' + sizes[i];
         }
 
-        // 规范化 WebDAV 路径前缀
         function getWebDAVPath(subPath) {
           let p = (currentPath + (subPath || '')).replace(/\/+/g, '/');
           if (!p.startsWith('/')) p = '/' + p;
           return '/webdav' + p;
         }
 
-        // 渲染面包屑
         function renderBreadcrumbs() {
           const box = document.getElementById('breadcrumb-box');
           box.innerHTML = '';
@@ -194,7 +264,7 @@
           box.appendChild(rootSpan);
 
           let builtPath = '/';
-          parts.forEach((part, idx) => {
+          parts.forEach((part) => {
             builtPath += part + '/';
             const thisPath = builtPath;
             
@@ -217,9 +287,10 @@
           fetchDirectory();
         };
 
-        // 1. 发送 WebDAV PROPFIND 列取当前目录
+        // 1. 发起 WebDAV PROPFIND 读取当前目录
         async function fetchDirectory() {
           renderBreadcrumbs();
+          updateAuthUI();
           const targetUrl = getWebDAVPath();
           try {
             const res = await fetch(targetUrl, {
@@ -234,14 +305,12 @@
             const responses = Array.from(xmlDoc.getElementsByTagNameNS("*", "response"));
 
             files = [];
-            // 当前文件夹的 URI 标记，用于比对排除自身
             const normalizedCurUri = targetUrl.replace(/\/$/, '');
 
             for (let i = 0; i < responses.length; i++) {
               const href = responses[i].getElementsByTagNameNS("*", "href")[0]?.textContent || '';
               const cleanHref = href.replace(/\/$/, '');
               
-              // 排除当前正在请求的自身目录
               if (cleanHref.endsWith(normalizedCurUri) || cleanHref === normalizedCurUri) continue;
 
               const resType = responses[i].getElementsByTagNameNS("*", "resourcetype")[0];
@@ -270,7 +339,6 @@
               });
             }
 
-            // 排序：文件夹置顶，其次按名称排列
             files.sort((a, b) => {
               if (a.isFolder === b.isFolder) return a.name.localeCompare(b.name);
               return a.isFolder ? -1 : 1;
@@ -284,13 +352,12 @@
           }
         }
 
-        // 2. 渲染视图
+        // 2. 列表渲染
         function drawList() {
           const box = document.getElementById('files-box');
           if (!box) return;
           box.innerHTML = '';
 
-          // 若不在根目录，增加快速返回上一级选项
           if (currentPath !== '/') {
             const upTr = document.createElement('tr');
             upTr.className = 'file-row';
@@ -309,9 +376,12 @@
             return;
           }
 
+          const loggedIn = isAdminLoggedIn();
+
           files.forEach(f => {
-            const fullId = (currentPath + f.name).replace(/\/+/g, '/');
-            const hasLock = !!locks[fullId];
+            const fileKey = getNormalizedKey(f.name);
+            const isLocked = !!locks[fileKey];
+
             const tr = document.createElement('tr');
             tr.className = 'file-row';
 
@@ -328,15 +398,15 @@
               <td>${nameHtml}</td>
               <td style="color:#7f8c8d">${f.size}</td>
               <td style="text-align:center">
-                <button class="lock-btn" onclick="window.onLockClick('${fullId}')">
-                  <span>${hasLock ? '🔴' : '🔓'}</span>
+                <button class="lock-btn" onclick="window.onLockClick('${fileKey}')">
+                  <span>${isLocked ? '🔴' : '🔓'}</span>
                 </button>
               </td>
               <td style="text-align:right">
-                ${!f.isFolder ? `<button class="action-btn" onclick="window.onPreviewClick('${fullId}')">预览</button>` : ''}
-                ${!f.isFolder ? `<button class="action-btn" onclick="window.onDownloadClick('${fullId}')">下载</button>` : ''}
+                ${!f.isFolder ? `<button class="action-btn" onclick="window.onPreviewClick('${f.name}')">预览</button>` : ''}
+                ${!f.isFolder ? `<button class="action-btn" onclick="window.onDownloadClick('${f.name}')">下载</button>` : ''}
                 <button class="action-btn" style="background:#2a334a !important;" onclick="window.onMoveClick('${f.name}')">移动</button>
-                <button class="delete-btn" onclick="window.onDeleteClick('${f.name}', '${fullId}', ${f.isFolder})">删除 🗑️</button>
+                <button class="delete-btn" onclick="window.onDeleteClick('${f.name}', ${f.isFolder})">删除 🗑️</button>
               </td>
             `;
             box.appendChild(tr);
@@ -349,7 +419,121 @@
           navigateTo('/' + (parts.length > 0 ? parts.join('/') + '/' : ''));
         };
 
-        // 3. WebDAV MKCOL 新建文件夹
+        // 3. 点击加锁/解锁逻辑（严格持久化与安全防护）
+        window.onLockClick = function(fileKey) {
+          if (!locks[fileKey]) {
+            // 一键加锁，无需密码
+            locks[fileKey] = true;
+            persistLocks();
+            drawList();
+            alert("🔒 已锁定！当前文件已被加密，刷新页面将持续保持红点 🔴 状态。");
+          } else {
+            // 解锁：如果已经是管理员则直接解除，否则需输入密码
+            if (isAdminLoggedIn()) {
+              delete locks[fileKey];
+              persistLocks();
+              drawList();
+              alert("🔓 已解除锁定，文件恢复公开状态。");
+            } else {
+              currentAuthAction = (authKey) => {
+                if (authKey === SEC_KEY) {
+                  delete locks[fileKey];
+                  persistLocks();
+                  drawList();
+                  alert("🔓 密码验证成功，已解除锁定！");
+                } else {
+                  alert("🚨 密码错误，无法解锁！");
+                }
+              };
+              openGate("🔓 解除锁定验证");
+            }
+          }
+        };
+
+        // 4. 在线预览
+        window.onPreviewClick = function(name) {
+          const fileKey = getNormalizedKey(name);
+          const f = files.find(item => item.name === name);
+          if (!f) return;
+
+          const execute = () => {
+            const area = document.getElementById('v-area');
+            document.getElementById('v-title').innerText = f.name;
+            if (f.type === 'image') area.innerHTML = `<img src="${f.url}">`;
+            else if (f.type === 'video') area.innerHTML = `<video src="${f.url}" controls autoplay></video>`;
+            else area.innerHTML = `<p style="color:#7f8c8d;padding:20px;">该格式不支持在线预览，请直接下载。</p>`;
+            document.getElementById('view-modal').classList.add('active');
+          };
+
+          if (locks[fileKey] && !isAdminLoggedIn()) {
+            currentAuthAction = (authKey) => {
+              if (authKey === SEC_KEY) execute();
+              else alert("🚨 密码错误，禁止预览！");
+            };
+            openGate("👁️ 预览受限：请输入管理密码");
+          } else {
+            execute();
+          }
+        };
+
+        // 5. 下载文件
+        window.onDownloadClick = function(name) {
+          const fileKey = getNormalizedKey(name);
+          const f = files.find(item => item.name === name);
+          if (!f) return;
+
+          const execute = () => {
+            const a = document.createElement('a');
+            a.href = f.url;
+            a.download = f.name;
+            a.click();
+          };
+
+          if (locks[fileKey] && !isAdminLoggedIn()) {
+            currentAuthAction = (authKey) => {
+              if (authKey === SEC_KEY) execute();
+              else alert("🚨 密码错误，禁止下载！");
+            };
+            openGate("📥 下载受限：请输入管理密码");
+          } else {
+            execute();
+          }
+        };
+
+        // 6. 删除文件或目录
+        window.onDeleteClick = function(name, isFolder) {
+          const fileKey = getNormalizedKey(name);
+          const execute = async () => {
+            const tip = isFolder ? `确定删除文件夹【${name}】及其内部所有内容吗？` : `确定彻底删除文件【${name}】吗？`;
+            if (!confirm(tip)) return;
+            try {
+              const res = await fetch(getWebDAVPath(encodeURIComponent(name)), { method: 'DELETE' });
+              if (res.ok || res.status === 204) {
+                if (locks[fileKey]) {
+                  delete locks[fileKey];
+                  persistLocks();
+                }
+                fetchDirectory();
+              } else {
+                alert('删除失败，状态码: ' + res.status);
+              }
+            } catch(e) {
+              alert('网络异常，删除失败');
+            }
+          };
+
+          if (locks[fileKey] && !isAdminLoggedIn()) {
+            currentAuthAction = (authKey) => {
+              if (authKey === SEC_KEY) execute();
+              else alert("🚨 密码错误，禁止删除！");
+            };
+            openGate("🗑️ 危险操作：删除加锁项目验证");
+          } else {
+            execute();
+          }
+        };
+
+        // 7. 新建文件夹
         window.openNewFolderModal = function() {
           document.getElementById('new-folder-name').value = '';
           document.getElementById('folder-modal').classList.add('active');
@@ -373,7 +557,7 @@
           }
         };
 
-        // 4. WebDAV MOVE 移动文件/目录
+        // 8. 移动文件 / 目录
         window.onMoveClick = function(name) {
           movingTargetItem = name;
           document.getElementById('move-dest-input').value = currentPath;
@@ -398,6 +582,14 @@
               }
             });
             if (res.ok || res.status === 201 || res.status === 204) {
+              // 同步更新锁的 key
+              const oldKey = getNormalizedKey(movingTargetItem);
+              if (locks[oldKey]) {
+                delete locks[oldKey];
+                const newKey = (destDir + movingTargetItem).replace(/\/+/g, '/');
+                locks[newKey] = true;
+                persistLocks();
+              }
               fetchDirectory();
             } else {
               alert('移动失败，错误码: ' + res.status);
@@ -407,7 +599,7 @@
           }
         };
 
-        // 5. 顺序/并发上传调度器
+        // 9. 上传传输引擎
         async function uploadSingleFile(file, remoteSubPath) {
           const destUrl = getWebDAVPath(remoteSubPath);
           return new Promise((resolve, reject) => {
@@ -420,7 +612,6 @@
           });
         }
 
-        // 上传文件列表（支持单文件与多选）
         window.handleFilesUpload = async function(fileList) {
           if (!fileList || fileList.length === 0) return;
           const panel = document.getElementById('upload-progress-panel');
@@ -447,7 +638,6 @@
           }, 300);
         };
 
-        // 上传整包文件夹（递归按结构直传）
         window.handleFolderUpload = async function(fileList) {
           if (!fileList || fileList.length === 0) return;
           const panel = document.getElementById('upload-progress-panel');
@@ -456,7 +646,6 @@
 
           for (let i = 0; i < fileList.length; i++) {
             const file = fileList[i];
-            // 获取如 "myFolder/sub/a.txt" 的相对路径
             const relPath = file.webkitRelativePath || file.name;
             const encodedRelPath = relPath.split('/').map(encodeURIComponent).join('/');
             
@@ -479,86 +668,7 @@
           }, 400);
         };
 
-        // 6. 加锁/密码拦截与删除
-        window.onLockClick = function(fullId) {
-          if (!locks[fullId]) {
-            locks[fullId] = true;
-            localStorage.setItem('hd_locks', JSON.stringify(locks));
-            drawList();
-          } else {
-            currentAuthAction = (authKey) => {
-              if (authKey === SEC_KEY) {
-                delete locks[fullId];
-                localStorage.setItem('hd_locks', JSON.stringify(locks));
-                drawList();
-              } else alert('🚨 密码不正确！');
-            };
-            openGate('🔓 解除文件加密验证');
-          }
-        };
-
-        window.onPreviewClick = function(fullId) {
-          const name = fullId.split('/').pop();
-          const f = files.find(item => item.name === name);
-          if (!f) return;
-          const execute = () => {
-            const area = document.getElementById('v-area');
-            document.getElementById('v-title').innerText = f.name;
-            if (f.type === 'image') area.innerHTML = `<img src="${f.url}">`;
-            else if (f.type === 'video') area.innerHTML = `<video src="${f.url}" controls autoplay></video>`;
-            else area.innerHTML = `<p style="color:#7f8c8d;padding:20px;">该格式不支持在线预览</p>`;
-            document.getElementById('view-modal').classList.add('active');
-          };
-
-          if (locks[fullId]) {
-            currentAuthAction = (authKey) => authKey === SEC_KEY ? execute() : alert('🚨 密码错误！');
-            openGate('👁️ 预览受限：请输入密码');
-          } else execute();
-        };
-
-        window.onDownloadClick = function(fullId) {
-          const name = fullId.split('/').pop();
-          const f = files.find(item => item.name === name);
-          if (!f) return;
-          const execute = () => {
-            const a = document.createElement('a');
-            a.href = f.url;
-            a.download = f.name;
-            a.click();
-          };
-
-          if (locks[fullId]) {
-            currentAuthAction = (authKey) => authKey === SEC_KEY ? execute() : alert('🚨 密码错误！');
-            openGate('📥 下载受限：请输入密码');
-          } else execute();
-        };
-
-        window.onDeleteClick = function(name, fullId, isFolder) {
-          const execute = async () => {
-            const tip = isFolder ? `确定删除文件夹【${name}】及其内部所有内容吗？` : `确定彻底删除文件【${name}】吗？`;
-            if (!confirm(tip)) return;
-            try {
-              const res = await fetch(getWebDAVPath(encodeURIComponent(name)), { method: 'DELETE' });
-              if (res.ok || res.status === 204) {
-                if (locks[fullId]) {
-                  delete locks[fullId];
-                  localStorage.setItem('hd_locks', JSON.stringify(locks));
-                }
-                fetchDirectory();
-              } else {
-                alert('删除失败，状态码: ' + res.status);
-              }
-            } catch(e) {
-              alert('请求失败');
-            }
-          };
-
-          if (locks[fullId]) {
-            currentAuthAction = (authKey) => authKey === SEC_KEY ? execute() : alert('🚨 密码错误！');
-            openGate('🗑️ 危险操作：删除加锁项目验证');
-          } else execute();
-        };
-
+        // 弹窗通用控制
         function openGate(title) {
           document.getElementById('m-title').innerText = title;
           document.getElementById('m-pwd').value = '';
@@ -575,7 +685,7 @@
           if (currentAuthAction) currentAuthAction(btoa(pwd));
         };
 
-        // 启动进入根目录
+        // 初始装载进入根目录
         fetchDirectory();
       })();
     </script>
