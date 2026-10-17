@@ -13,7 +13,6 @@
       .header-actions { display: flex; align-items: center; gap: 12px; }
       .user-status { font-size: 13px; color: #7f8c8d; }
       
-      /* 工具栏 & 面包屑 */
       .toolbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; background: #14161f; padding: 12px 18px; border-radius: 10px; border: 1px solid #222533; }
       .breadcrumbs { display: flex; align-items: center; gap: 8px; font-size: 14px; flex-wrap: wrap; }
       .crumb-item { color: #3b82f6; cursor: pointer; text-decoration: none; }
@@ -21,13 +20,11 @@
       .crumb-sep { color: #7f8c8d; }
       .tool-actions { display: flex; gap: 10px; }
       
-      /* 上传与操作按钮 */
       .ctrl-btn { background: #222533; color: #fff; border: 1px solid #2e3446; padding: 7px 14px; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 500; display: inline-flex; align-items: center; gap: 6px; transition: 0.2s; }
       .ctrl-btn:hover { background: #3b82f6; border-color: #3b82f6; }
       .ctrl-btn.danger { background: #222533; color: #ef4444; border-color: #4b2328; }
       .ctrl-btn.danger:hover { background: #ef4444; color: #fff; border-color: #ef4444; }
 
-      /* 极速上传舱 */
       .upload-panel { background: #14161f; border: 2px dashed #222533; border-radius: 12px; padding: 22px; text-align: center; margin-bottom: 20px; cursor: pointer; transition: 0.2s; display: block; }
       .upload-panel:hover { border-color: #3b82f6; background: #171a26; }
       .progress-container { margin-top: 15px; background: #0b0c10; padding: 12px; border-radius: 8px; display: none; text-align: left; border: 1px solid #222533; }
@@ -36,7 +33,6 @@
       .progress-bar-bg { width: 100%; height: 6px; background: #222533; border-radius: 3px; overflow: hidden; }
       .progress-bar-fill { width: 0%; height: 100%; background: linear-gradient(to right, #3b82f6, #10b981); transition: width 0.1s linear; }
       
-      /* 文件列表表格 */
       .file-table { width: 100%; border-collapse: collapse; background: #14161f; border-radius: 12px; overflow: hidden; }
       .file-table th { background: #1c1e29; padding: 14px 20px; text-align: left; font-size: 13px; color: #7f8c8d; }
       .file-table td { padding: 14px 20px; border-bottom: 1px solid #222533; font-size: 14px; }
@@ -51,7 +47,6 @@
       .delete-btn { background: #222533 !important; color: #ef4444 !important; border: none !important; padding: 5px 10px; border-radius: 6px; cursor: pointer; margin-left: 4px; font-size: 12.5px; }
       .delete-btn:hover { background: #ef4444 !important; color: #fff !important; }
       
-      /* 弹窗通用样式 */
       .modal { position: fixed; top:0; left:0; right:0; bottom:0; background: rgba(0,0,0,0.8); backdrop-filter: blur(5px); display: flex; align-items: center; justify-content: center; z-index: 999; opacity: 0; pointer-events: none; transition: 0.2s; }
       .modal.active { opacity: 1; pointer-events: auto; }
       .modal-box { background: #14161f; border: 1px solid #222533; border-radius: 12px; padding: 25px; width: 90%; max-width: 450px; }
@@ -71,7 +66,6 @@
         </div>
       </div>
       
-      <!-- 工具栏 -->
       <div class="toolbar">
         <div class="breadcrumbs" id="breadcrumb-box">
           <span class="crumb-item" onclick="navigateTo('/')">根目录</span>
@@ -82,7 +76,6 @@
         </div>
       </div>
 
-      <!-- 上传舱 -->
       <label class="upload-panel" for="hidden-file-input">
         <input type="file" id="hidden-file-input" style="display:none;" multiple onclick="event.stopPropagation()" onchange="handleFilesUpload(this.files); this.value='';" />
         <input type="file" id="hidden-folder-input" style="display:none;" webkitdirectory directory multiple onclick="event.stopPropagation()" onchange="handleFolderUpload(this.files); this.value='';" />
@@ -101,7 +94,6 @@
         </div>
       </label>
 
-      <!-- 文件列表表格 -->
       <table class="file-table">
         <thead>
           <tr>
@@ -117,7 +109,6 @@
       </table>
     </div>
 
-    <!-- 弹窗 1：密码验证拦截 -->
     <div id="lock-modal" class="modal">
       <div class="modal-box">
         <h3 id="m-title" style="margin:0;">权限安全拦截</h3>
@@ -129,11 +120,10 @@
       </div>
     </div>
 
-    <!-- 弹窗 2：新建文件夹 -->
     <div id="folder-modal" class="modal">
       <div class="modal-box">
         <h3 style="margin:0;">新建文件夹</h3>
-        <input type="text" id="new-folder-name" class="m-input" placeholder="请输入文件夹名称（如：备份资料）" />
+        <input type="text" id="new-folder-name" class="m-input" placeholder="请输入文件夹名称（如：资料备份）" />
         <div style="text-align:right;">
           <button class="action-btn" onclick="closeBox('folder-modal')">取消</button>
           <button class="action-btn" style="background:#3b82f6 !important" onclick="submitNewFolder()">确认创建</button>
@@ -141,7 +131,6 @@
       </div>
     </div>
 
-    <!-- 弹窗 3：移动文件/文件夹 -->
     <div id="move-modal" class="modal">
       <div class="modal-box">
         <h3 style="margin:0;">移动至目标路径</h3>
@@ -154,44 +143,53 @@
       </div>
     </div>
 
-    <!-- 弹窗 4：在线预览 -->
     <div id="view-modal" class="modal" onclick="closeBox('view-modal')">
       <div class="modal-box large" onclick="event.stopPropagation()">
         <h3 id="v-title" style="margin:0 0 15px 0;">文件在线预览</h3>
         <div class="preview-area" id="v-area" style="text-align:center;"></div>
       </div>
     </div>
-
     <script>
       (function() {
-        const SEC_KEY = "aWtpbWk1MjA="; 
-        const LOCKS_STORAGE_KEY = "titan_drive_locks_store";
+        const SEC_KEY = "aWtpbWk1MjA=";
+        const LOCKS_FILE_PATH = "/webdav/.titan_locks.json";
         const SESSION_AUTH_KEY = "titan_drive_is_admin";
 
-        // 核心锁字典：保证从 localStorage 中稳定提取
-        let locks = {};
-        try {
-          locks = JSON.parse(localStorage.getItem(LOCKS_STORAGE_KEY)) || {};
-        } catch(e) {
-          locks = {};
-        }
-
+        let cloudLocks = {};
         let currentPath = "/";
         let files = [];
         let currentAuthAction = null;
         let movingTargetItem = null;
 
-        // 统一保存锁状态至永久存储
-        function persistLocks() {
-          localStorage.setItem(LOCKS_STORAGE_KEY, JSON.stringify(locks));
+        async function fetchCloudLocks() {
+          try {
+            const res = await fetch(LOCKS_FILE_PATH);
+            if (res.ok) {
+              cloudLocks = await res.json();
+            } else {
+              cloudLocks = {};
+            }
+          } catch (e) {
+            cloudLocks = {};
+          }
         }
 
-        // 判断当前会话是否为已认证的管理员
+        async function syncCloudLocks() {
+          try {
+            await fetch(LOCKS_FILE_PATH, {
+              method: 'PUT',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(cloudLocks)
+            });
+          } catch (e) {
+            console.error(e);
+          }
+        }
+
         function isAdminLoggedIn() {
           return sessionStorage.getItem(SESSION_AUTH_KEY) === "true";
         }
 
-        // 刷新右上角管理态 UI
         function updateAuthUI() {
           const statusLabel = document.getElementById('login-status-label');
           const authBtn = document.getElementById('auth-btn');
@@ -208,10 +206,9 @@
           }
         }
 
-        // 点击右上角按钮（登录 / 退出登录）
         window.handleAuthBtnClick = function() {
           if (isAdminLoggedIn()) {
-            if (confirm("确定要退出管理员模式吗？退出后访问加锁文件将重新需要密码。")) {
+            if (confirm("确定要退出管理员模式吗？退出后访问加锁文件将需要重新输入密码。")) {
               sessionStorage.removeItem(SESSION_AUTH_KEY);
               updateAuthUI();
               drawList();
@@ -232,7 +229,6 @@
           }
         };
 
-        // 关键：标准化文件唯一标识（无论在哪个子目录下，都拼接为绝对路径 /xxx/yyy）
         function getNormalizedKey(name) {
           let p = (currentPath + name).replace(/\/+/g, '/');
           return p.startsWith('/') ? p : '/' + p;
@@ -287,10 +283,11 @@
           fetchDirectory();
         };
 
-        // 1. 发起 WebDAV PROPFIND 读取当前目录
         async function fetchDirectory() {
           renderBreadcrumbs();
           updateAuthUI();
+          await fetchCloudLocks();
+
           const targetUrl = getWebDAVPath();
           try {
             const res = await fetch(targetUrl, {
@@ -318,7 +315,8 @@
               
               const rawName = cleanHref.split('/').pop();
               const name = decodeURIComponent(rawName);
-              if (name === '_$flaredrive$' || !name) continue;
+
+              if (name === '_$flaredrive$' || name === '.titan_locks.json' || !name) continue;
 
               const sizeTag = responses[i].getElementsByTagNameNS("*", "getcontentlength")[0];
               const sizeBytes = sizeTag ? parseInt(sizeTag.textContent || '0') : 0;
@@ -351,8 +349,6 @@
               `<tr><td colspan="4" style="text-align:center;color:#ef4444;padding:25px;">目录读取失败，请检查网络或后端状态。</td></tr>`;
           }
         }
-
-        // 2. 列表渲染
         function drawList() {
           const box = document.getElementById('files-box');
           if (!box) return;
@@ -376,11 +372,9 @@
             return;
           }
 
-          const loggedIn = isAdminLoggedIn();
-
           files.forEach(f => {
             const fileKey = getNormalizedKey(f.name);
-            const isLocked = !!locks[fileKey];
+            const isLocked = !!cloudLocks[fileKey];
 
             const tr = document.createElement('tr');
             tr.className = 'file-row';
@@ -419,28 +413,25 @@
           navigateTo('/' + (parts.length > 0 ? parts.join('/') + '/' : ''));
         };
 
-        // 3. 点击加锁/解锁逻辑（严格持久化与安全防护）
-        window.onLockClick = function(fileKey) {
-          if (!locks[fileKey]) {
-            // 一键加锁，无需密码
-            locks[fileKey] = true;
-            persistLocks();
+        window.onLockClick = async function(fileKey) {
+          if (!cloudLocks[fileKey]) {
+            cloudLocks[fileKey] = true;
             drawList();
-            alert("🔒 已锁定！当前文件已被加密，刷新页面将持续保持红点 🔴 状态。");
+            await syncCloudLocks();
+            alert("🔒 已锁定！加密状态已同步至云端，所有设备查看均显示为红点 🔴。");
           } else {
-            // 解锁：如果已经是管理员则直接解除，否则需输入密码
             if (isAdminLoggedIn()) {
-              delete locks[fileKey];
-              persistLocks();
+              delete cloudLocks[fileKey];
               drawList();
+              await syncCloudLocks();
               alert("🔓 已解除锁定，文件恢复公开状态。");
             } else {
-              currentAuthAction = (authKey) => {
+              currentAuthAction = async (authKey) => {
                 if (authKey === SEC_KEY) {
-                  delete locks[fileKey];
-                  persistLocks();
+                  delete cloudLocks[fileKey];
                   drawList();
-                  alert("🔓 密码验证成功，已解除锁定！");
+                  await syncCloudLocks();
+                  alert("🔓 密码验证成功，已解除锁定并同步云端！");
                 } else {
                   alert("🚨 密码错误，无法解锁！");
                 }
@@ -450,7 +441,6 @@
           }
         };
 
-        // 4. 在线预览
         window.onPreviewClick = function(name) {
           const fileKey = getNormalizedKey(name);
           const f = files.find(item => item.name === name);
@@ -465,7 +455,7 @@
             document.getElementById('view-modal').classList.add('active');
           };
 
-          if (locks[fileKey] && !isAdminLoggedIn()) {
+          if (cloudLocks[fileKey] && !isAdminLoggedIn()) {
             currentAuthAction = (authKey) => {
               if (authKey === SEC_KEY) execute();
               else alert("🚨 密码错误，禁止预览！");
@@ -476,7 +466,6 @@
           }
         };
 
-        // 5. 下载文件
         window.onDownloadClick = function(name) {
           const fileKey = getNormalizedKey(name);
           const f = files.find(item => item.name === name);
@@ -489,7 +478,7 @@
             a.click();
           };
 
-          if (locks[fileKey] && !isAdminLoggedIn()) {
+          if (cloudLocks[fileKey] && !isAdminLoggedIn()) {
             currentAuthAction = (authKey) => {
               if (authKey === SEC_KEY) execute();
               else alert("🚨 密码错误，禁止下载！");
@@ -500,7 +489,6 @@
           }
         };
 
-        // 6. 删除文件或目录
         window.onDeleteClick = function(name, isFolder) {
           const fileKey = getNormalizedKey(name);
           const execute = async () => {
@@ -509,9 +497,9 @@
             try {
               const res = await fetch(getWebDAVPath(encodeURIComponent(name)), { method: 'DELETE' });
               if (res.ok || res.status === 204) {
-                if (locks[fileKey]) {
-                  delete locks[fileKey];
-                  persistLocks();
+                if (cloudLocks[fileKey]) {
+                  delete cloudLocks[fileKey];
+                  await syncCloudLocks();
                 }
                 fetchDirectory();
               } else {
@@ -522,7 +510,7 @@
             }
           };
 
-          if (locks[fileKey] && !isAdminLoggedIn()) {
+          if (cloudLocks[fileKey] && !isAdminLoggedIn()) {
             currentAuthAction = (authKey) => {
               if (authKey === SEC_KEY) execute();
               else alert("🚨 密码错误，禁止删除！");
@@ -533,7 +521,6 @@
           }
         };
 
-        // 7. 新建文件夹
         window.openNewFolderModal = function() {
           document.getElementById('new-folder-name').value = '';
           document.getElementById('folder-modal').classList.add('active');
@@ -557,7 +544,6 @@
           }
         };
 
-        // 8. 移动文件 / 目录
         window.onMoveClick = function(name) {
           movingTargetItem = name;
           document.getElementById('move-dest-input').value = currentPath;
@@ -582,13 +568,12 @@
               }
             });
             if (res.ok || res.status === 201 || res.status === 204) {
-              // 同步更新锁的 key
               const oldKey = getNormalizedKey(movingTargetItem);
-              if (locks[oldKey]) {
-                delete locks[oldKey];
+              if (cloudLocks[oldKey]) {
+                delete cloudLocks[oldKey];
                 const newKey = (destDir + movingTargetItem).replace(/\/+/g, '/');
-                locks[newKey] = true;
-                persistLocks();
+                cloudLocks[newKey] = true;
+                await syncCloudLocks();
               }
               fetchDirectory();
             } else {
@@ -599,7 +584,6 @@
           }
         };
 
-        // 9. 上传传输引擎
         async function uploadSingleFile(file, remoteSubPath) {
           const destUrl = getWebDAVPath(remoteSubPath);
           return new Promise((resolve, reject) => {
@@ -668,7 +652,6 @@
           }, 400);
         };
 
-        // 弹窗通用控制
         function openGate(title) {
           document.getElementById('m-title').innerText = title;
           document.getElementById('m-pwd').value = '';
@@ -685,7 +668,6 @@
           if (currentAuthAction) currentAuthAction(btoa(pwd));
         };
 
-        // 初始装载进入根目录
         fetchDirectory();
       })();
     </script>
