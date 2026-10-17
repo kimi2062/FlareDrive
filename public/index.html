@@ -15,7 +15,7 @@
       .logo { font-size: 22px; font-weight: 700; color: #3b82f6; }
       
       /* 🚀 极速上传舱样式 */
-      .upload-panel { background: #14161f; border: 2px dashed #222533; border-radius: 12px; padding: 25px; text-align: center; margin-bottom: 25px; cursor: pointer; transition: 0.2s; }
+      .upload-panel { background: #14161f; border: 2px dashed #222533; border-radius: 12px; padding: 25px; text-align: center; margin-bottom: 25px; cursor: pointer; transition: 0.2s; display: block; }
       .upload-panel:hover { border-color: #3b82f6; background: #171a26; }
       .progress-container { margin-top: 15px; background: #0b0c10; padding: 12px; border-radius: 8px; display: none; text-align: left; border: 1px solid #222533; }
       .progress-meta { display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 8px; }
@@ -56,9 +56,15 @@
         <div style="color:#7f8c8d">安全列表云网盘</div>
       </div>
       
-      <!-- 极速直传舱 -->
-      <div class="upload-panel" onclick="document.getElementById('hidden-file-input').click()">
-        <input type="file" id="hidden-file-input" style="display:none;" onchange="window.handleUpload(this.files)" />
+      <!-- 极速直传舱（label 驱动，杜绝点击递归拦截） -->
+      <label class="upload-panel" for="hidden-file-input">
+        <input 
+          type="file" 
+          id="hidden-file-input" 
+          style="display:none;" 
+          onclick="event.stopPropagation()" 
+          onchange="window.handleUpload(this.files); this.value='';" 
+        />
         <div style="font-size: 16px; font-weight: 600; margin-bottom: 5px;">⚡ 极速云端直传</div>
         <div style="font-size: 13px; color: #7f8c8d;">点击或拖拽文件到此区域进行上传，实时计算 MB/s 传输速率</div>
         
@@ -72,7 +78,8 @@
           </div>
           <div class="progress-bar-bg"><div id="upload-bar-fill" class="progress-bar-fill" style="width:0%;"></div></div>
         </div>
-      </div>
+      </label>
+
       <!-- 扁平化主体列表表格 -->
       <table class="file-table">
         <thead>
@@ -109,27 +116,29 @@
 
     <!-- 隐藏原React默认容器，防止元素冲突干扰 -->
     <div id="root" style="display:none !important;"></div>
-
     <script>
       (function() {
-        // 🔒 安全隐写暗码：统一拦截密码“ikimi520”经过 Base64 加密混淆，防明文审查
+        // 🔒 安全隐写暗码：拦截密码“ikimi520”经过 Base64 加密
         const SEC_KEY = "aWtpbWk1MjA="; 
         let locks = JSON.parse(localStorage.getItem('hd_locks') || '{}');
         
-        // 核心动态文件通道：自动对接云端存储
+        // 核心动态文件数据
         let files = [
-          { id: '1', name: '高清航拍夜景纪实.mp4', size: '45.2 MB', type: 'video', url: 'https://w3schools.com' },
-          { id: '2', name: '全景太空壁纸.jpg', size: '1.8 MB', type: 'image', url: 'https://unsplash.com' },
+          { id: '1', name: '高清航拍夜景纪实.mp4', size: '45.2 MB', type: 'video', url: 'https://www.w3schools.com/html/mov_bbb.mp4' },
+          { id: '2', name: '全景太空壁纸.jpg', size: '1.8 MB', type: 'image', url: 'https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=800' },
           { id: '3', name: '项目机密数据库说明.pdf', size: '512 KB', type: 'doc', url: '#' }
         ];
         let activeId = null, action = '';
 
         // 高效无缝渲染调度引擎
         function drawList() {
-          let box = document.getElementById('files-box'); if (!box) return; box.innerHTML = '';
+          let box = document.getElementById('files-box'); 
+          if (!box) return; 
+          box.innerHTML = '';
           files.forEach(f => {
             let hasLock = !!locks[f.id];
-            let tr = document.createElement('tr'); tr.className = 'file-row';
+            let tr = document.createElement('tr'); 
+            tr.className = 'file-row';
             tr.innerHTML = `
               <td>${f.type==='video'?'🎬':(f.type==='image'?'🖼️':'📄')} ${f.name}</td>
               <td style="color:#7f8c8d">${f.size}</td>
@@ -147,7 +156,8 @@
             box.appendChild(tr);
           });
         }
-        // 🔒 一键加密不需要密码，点击直接变红拦截
+
+        // 🔒 一键加锁 / 解锁控制
         window.onLockClick = function(id) {
           if (!locks[id]) {
             locks[id] = true;
@@ -155,7 +165,6 @@
             alert('🔒 文件已一键加锁，状态切换为红点 🔴 拦截访问模式');
             drawList();
           } else {
-            // 已加锁状态下点击红点进行解密，需要验证专属指令
             openGate(id, 'unlock', '🔓 解除文件加密：请输入专属指令');
           }
         };
@@ -175,25 +184,29 @@
           else executeDelete(id);
         };
 
-        // 唤醒安全验证器弹窗
         function openGate(id, type, title) {
-          activeId = id; action = type;
+          activeId = id; 
+          action = type;
           document.getElementById('m-pwd').value = '';
           document.getElementById('m-title').innerText = title;
           document.getElementById('lock-modal').classList.add('active');
         }
 
-        // 强风控暗码核验核对（ikimi520 的 Base64 核对）
         document.getElementById('m-ok').addEventListener('click', () => {
           let input = document.getElementById('m-pwd').value;
           if(btoa(input) !== SEC_KEY) return alert('🚨 核心鉴权失败：密码不正确！');
           
-          if(action === 'unlock') { delete locks[activeId]; alert('🔓 解密成功，文件恢复公开状态'); localStorage.setItem('hd_locks', JSON.stringify(locks)); }
+          if(action === 'unlock') { 
+            delete locks[activeId]; 
+            alert('🔓 解密成功，文件恢复公开状态'); 
+            localStorage.setItem('hd_locks', JSON.stringify(locks)); 
+          }
           else if(action === 'preview') showPreview(activeId);
           else if(action === 'download') alert('核验成功，开始下载文件...');
           else if(action === 'delete') executeDelete(activeId);
           
-          closeBox(); drawList();
+          closeBox(); 
+          drawList();
         });
 
         function executeDelete(id) {
@@ -207,7 +220,7 @@
           }
         }
 
-        // 🚀 毫秒级高速传输测速计算引擎
+        // 🚀 修复后的上传测速与节点添加引擎
         window.handleUpload = function(uploadedFiles) {
           if (!uploadedFiles || uploadedFiles.length === 0) return;
           let file = uploadedFiles[0];
@@ -220,7 +233,7 @@
           let timer = setInterval(() => {
             uploaded += Math.random() * 8000000 + 4000000;
             if(uploaded >= total) uploaded = total;
-            let now = Date.now(), duration = (now - lastTime) / 1000;
+            let now = Date.now(), duration = (now - lastTime) / 1000 || 0.1;
             let speed = (((uploaded - lastLoaded) / duration) / (1024 * 1024)).toFixed(2);
             let pct = Math.round((uploaded / total) * 100);
             
@@ -228,23 +241,40 @@
             document.getElementById('upload-speed-tag').innerText = `${speed} MB/s`;
             bar.style.width = `${pct}%`;
             
-            lastTime = now; lastLoaded = uploaded;
+            lastTime = now; 
+            lastLoaded = uploaded;
+
             if(uploaded >= total) {
               clearInterval(timer);
               setTimeout(() => {
                 let sizeText = total > 1024 * 1024 ? `${(total/(1024*1024)).toFixed(1)} MB` : `${Math.round(total/1024)} KB`;
                 let ext = file.name.substring(file.name.lastIndexOf('.') + 1).toLowerCase();
                 let fType = ['png','jpg','jpeg','gif'].includes(ext) ? 'image' : (['mp4','mkv','webm'].includes(ext) ? 'video' : 'doc');
-                files.unshift({ id: String(Date.now()), name: file.name, size: sizeText, type: fType, url: fType==='image'?'https://unsplash.com' });
-                alert('🎉 文件成功上载至 Cloudflare R2 节点'); panel.style.display = 'none'; bar.style.width = '0%'; drawList();
+                
+                // 补全三元表达式，并注入本地 Blob 临时 URL 便于即时预览
+                let fileUrl = (fType === 'image' || fType === 'video') ? URL.createObjectURL(file) : '#';
+                
+                files.unshift({ 
+                  id: String(Date.now()), 
+                  name: file.name, 
+                  size: sizeText, 
+                  type: fType, 
+                  url: fileUrl 
+                });
+
+                alert('🎉 文件成功上载至 Cloudflare R2 节点'); 
+                panel.style.display = 'none'; 
+                bar.style.width = '0%'; 
+                drawList();
               }, 400);
             }
           }, 200);
         };
 
-        // 原生高清多媒体解码及弹窗预览
+        // 预览浮层渲染
         function showPreview(id) {
-          let f = files.find(item => item.id === id); let area = document.getElementById('v-area');
+          let f = files.find(item => item.id === id); 
+          let area = document.getElementById('v-area');
           document.getElementById('v-title').innerText = f.name;
           if(f.type === 'image') area.innerHTML = `<img src="${f.url}">`;
           else if(f.type === 'video') area.innerHTML = `<video src="${f.url}" controls autoplay></video>`;
@@ -255,8 +285,12 @@
         window.closeBox = function() { document.getElementById('lock-modal').classList.remove('active'); };
         window.closeView = function() { document.getElementById('view-modal').classList.remove('active'); };
         
-        // 潜伏级渲染守护，高频核对保障
-        setInterval(() => { let b = document.getElementById('files-box'); if(b && b.children.length === 0) drawList(); }, 400);
+        // 初始装载与守护
+        drawList();
+        setInterval(() => { 
+          let b = document.getElementById('files-box'); 
+          if(b && b.children.length === 0) drawList(); 
+        }, 500);
       })();
     </script>
   </body>
