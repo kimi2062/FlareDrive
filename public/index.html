@@ -6,13 +6,11 @@
     <title>Titan Drive</title>
     
     <style>
-      /* 全局高级暗黑极简重塑 */
       body { background-color: #0b0c10 !important; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important; color: #f1f2f6 !important; margin: 0; min-height: 100vh; }
       #root-override { max-width: 1100px; margin: 0 auto; padding: 40px 20px; }
       .header { display: flex; justify-content: space-between; border-bottom: 1px solid #222533; padding-bottom: 15px; margin-bottom: 25px; align-items: center; }
       .logo { font-size: 22px; font-weight: 700; color: #3b82f6; }
       
-      /* 🚀 极速直传舱样式 */
       .upload-panel { background: #14161f; border: 2px dashed #222533; border-radius: 12px; padding: 25px; text-align: center; margin-bottom: 25px; cursor: pointer; transition: 0.2s; display: block; }
       .upload-panel:hover { border-color: #3b82f6; background: #171a26; }
       .progress-container { margin-top: 15px; background: #0b0c10; padding: 12px; border-radius: 8px; display: none; text-align: left; border: 1px solid #222533; }
@@ -21,20 +19,17 @@
       .progress-bar-bg { width: 100%; height: 6px; background: #222533; border-radius: 3px; overflow: hidden; }
       .progress-bar-fill { width: 0%; height: 100%; background: linear-gradient(to right, #3b82f6, #10b981); transition: width 0.1s linear; }
       
-      /* 📁 扁平化文件列表布局 */
       .file-table { width: 100%; border-collapse: collapse; background: #14161f; border-radius: 12px; overflow: hidden; }
       .file-table th { background: #1c1e29; padding: 14px 20px; text-align: left; font-size: 13px; color: #7f8c8d; }
       .file-table td { padding: 16px 20px; border-bottom: 1px solid #222533; font-size: 14px; }
       .file-row:hover { background: rgba(255, 255, 255, 0.02); }
       
-      /* 一键加锁图标与操作 */
       .lock-btn { background: none !important; border: none !important; cursor: pointer; font-size: 18px; padding: 5px; }
       .action-btn { background: #222533 !important; color: #fff !important; border: none !important; padding: 6px 12px; border-radius: 6px; cursor: pointer; margin-left: 5px; font-size: 13px; }
       .action-btn:hover { background: #3b82f6 !important; }
       .delete-btn { background: #222533 !important; color: #ef4444 !important; border: none !important; padding: 6px 12px; border-radius: 6px; cursor: pointer; margin-left: 5px; font-size: 13px; }
       .delete-btn:hover { background: #ef4444 !important; color: #fff !important; }
       
-      /* 🔐 拦截模态弹窗与大图预览 */
       .modal { position: fixed; top:0; left:0; right:0; bottom:0; background: rgba(0,0,0,0.8); backdrop-filter: blur(5px); display: flex; align-items: center; justify-content: center; z-index: 999; opacity: 0; pointer-events: none; transition: 0.2s; }
       .modal.active { opacity: 1; pointer-events: auto; }
       .modal-box { background: #14161f; border: 1px solid #222533; border-radius: 12px; padding: 25px; width: 90%; max-width: 450px; }
@@ -50,7 +45,7 @@
     <div id="root-override">
       <div class="header">
         <div class="logo">📂 Titan Drive</div>
-        <div style="font-size:13px; color:#7f8c8d">已连通 Cloudflare 原生接口</div>
+        <div style="font-size:13px; color:#7f8c8d">原生 WebDAV 存储节点已连接</div>
       </div>
       
       <!-- 极速直传舱 -->
@@ -60,10 +55,10 @@
           id="hidden-file-input" 
           style="display:none;" 
           onclick="event.stopPropagation()" 
-          onchange="handleFlareUpload(this.files); this.value='';" 
+          onchange="handleWebDAVUpload(this.files); this.value='';" 
         />
-        <div style="font-size: 16px; font-weight: 600; margin-bottom: 5px;">⚡ 极速直传至 Cloudflare 存储</div>
-        <div style="font-size: 13px; color: #7f8c8d;">点击或拖拽文件到此区域，调用真实后端通道上传</div>
+        <div style="font-size: 16px; font-weight: 600; margin-bottom: 5px;">⚡ 极速直传至 Cloudflare R2</div>
+        <div style="font-size: 13px; color: #7f8c8d;">点击或拖拽文件到此区域，直连 WebDAV 通道上传</div>
         
         <div id="upload-progress-panel" class="progress-container" onclick="event.stopPropagation()">
           <div class="progress-meta">
@@ -77,7 +72,7 @@
         </div>
       </label>
 
-      <!-- 扁平化主体列表表格 -->
+      <!-- 文件列表表格 -->
       <table class="file-table">
         <thead>
           <tr>
@@ -88,7 +83,7 @@
           </tr>
         </thead>
         <tbody id="files-box">
-          <tr><td colspan="4" style="text-align:center;color:#7f8c8d;padding:20px;">正在连接 Cloudflare 后端接口拉取文件...</td></tr>
+          <tr><td colspan="4" style="text-align:center;color:#7f8c8d;padding:25px;">正在通过 WebDAV 解析存储桶文件...</td></tr>
         </tbody>
       </table>
     </div>
@@ -122,7 +117,6 @@
         let files = [];
         let currentAuthAction = null;
 
-        // 格式化文件大小
         function formatBytes(bytes) {
           if (!bytes || bytes === 0) return '0 B';
           const k = 1024;
@@ -131,40 +125,55 @@
           return (bytes / Math.pow(k, i)).toFixed(1) + ' ' + sizes[i];
         }
 
-        // 1. 调用 FlareDrive 标准列表接口拉取真实文件
+        // 1. 发起标准 WebDAV PROPFIND 请求解析文件列表
         async function fetchChildren() {
           try {
-            // FlareDrive 原生接口：GET /api/children
-            const res = await fetch('/api/children');
-            if (!res.ok) throw new Error('FlareDrive 响应失败: ' + res.status);
-            const data = await res.json();
+            const res = await fetch('/webdav/', {
+              method: 'PROPFIND',
+              headers: { 'Depth': '1' }
+            });
             
-            // 兼容 FlareDrive 的返回值 (data.value 或直接数组)
-            const list = data.value || data || [];
-            files = list.map(item => {
-              const name = item.name || item.key || '未命名文件';
+            if (!res.ok) throw new Error('WebDAV 响应状态: ' + res.status);
+            
+            const xmlText = await res.text();
+            const parser = new DOMParser();
+            const xmlDoc = parser.parseFromString(xmlText, "text/xml");
+            const responses = Array.from(xmlDoc.getElementsByTagNameNS("*", "response"));
+            
+            files = [];
+            // 跳过首项（目录本身）
+            for (let i = 1; i < responses.length; i++) {
+              const href = responses[i].getElementsByTagNameNS("*", "href")[0]?.textContent || '';
+              const cleanHref = href.replace(/\/$/, '');
+              const name = decodeURIComponent(cleanHref.split('/').pop());
+              
+              // 过滤 FlareDrive 内部缩略图缓存文件夹
+              if (name === '_$flaredrive$' || name === '') continue;
+
+              const sizeTag = responses[i].getElementsByTagNameNS("*", "getcontentlength")[0];
+              const sizeBytes = sizeTag ? parseInt(sizeTag.textContent || '0') : 0;
+              
               const ext = name.split('.').pop().toLowerCase();
               let fType = 'doc';
               if (['png', 'jpg', 'jpeg', 'gif', 'webp', 'svg'].includes(ext)) fType = 'image';
               else if (['mp4', 'webm', 'mov', 'mkv'].includes(ext)) fType = 'video';
               
-              // 兼容原生下载/预览直链
-              const fileUrl = item.url || ('/api/raw/' + encodeURIComponent(name));
+              const fileUrl = href.startsWith('http') ? href : (location.origin + href);
 
-              return {
+              files.push({
                 id: name,
                 name: name,
-                size: formatBytes(item.size),
+                size: formatBytes(sizeBytes),
                 type: fType,
                 url: fileUrl
-              };
-            });
-
+              });
+            }
+            
             drawList();
           } catch (e) {
             console.error(e);
             document.getElementById('files-box').innerHTML = 
-              `<tr><td colspan="4" style="text-align:center;color:#ef4444;padding:25px;">无法读取后端 /api/children 接口，请确认 Worker 是否在线。</td></tr>`;
+              `<tr><td colspan="4" style="text-align:center;color:#ef4444;padding:25px;">无法读取 WebDAV 列表（状态码异常或解析失败），请确认是否已执行 Redeploy。</td></tr>`;
           }
         }
 
@@ -173,7 +182,7 @@
           const box = document.getElementById('files-box');
           if (!box) return;
           if (files.length === 0) {
-            box.innerHTML = '<tr><td colspan="4" style="text-align:center;color:#7f8c8d;padding:30px;">存储桶内暂无文件，点击上方上传舱开始上传</td></tr>';
+            box.innerHTML = '<tr><td colspan="4" style="text-align:center;color:#7f8c8d;padding:30px;">存储桶暂无文件，点击上方上传舱开始上传</td></tr>';
             return;
           }
           box.innerHTML = '';
@@ -199,8 +208,8 @@
           });
         }
 
-        // 3. 真实对接 FlareDrive 上传通道（PUT /api/write/:filename）
-        window.handleFlareUpload = function(uploadedFiles) {
+        // 3. WebDAV PUT 上传接口对接
+        window.handleWebDAVUpload = function(uploadedFiles) {
           if (!uploadedFiles || uploadedFiles.length === 0) return;
           const file = uploadedFiles[0];
           const panel = document.getElementById('upload-progress-panel');
@@ -235,13 +244,13 @@
           xhr.onload = () => {
             if (xhr.status >= 200 && xhr.status < 300) {
               setTimeout(() => {
-                alert('🎉 文件成功上载至 Cloudflare R2！');
+                alert('🎉 文件成功写入 R2 存储桶！');
                 panel.style.display = 'none';
                 bar.style.width = '0%';
-                fetchChildren(); // 重新拉取真实列表
+                fetchChildren();
               }, 300);
             } else {
-              alert('上载失败：' + xhr.statusText);
+              alert('上载失败，状态码: ' + xhr.status);
               panel.style.display = 'none';
             }
           };
@@ -251,13 +260,12 @@
             panel.style.display = 'none';
           };
 
-          // FlareDrive 标准写接口
-          xhr.open("PUT", `/api/write/${encodeURIComponent(file.name)}`);
+          xhr.open("PUT", `/webdav/${encodeURIComponent(file.name)}`);
           xhr.setRequestHeader("Content-Type", file.type || "application/octet-stream");
           xhr.send(file);
         };
 
-        // 4. 一键加锁 / 解锁（本地加密状态安全持久化）
+        // 4. 加锁 / 解锁控制
         window.onLockClick = function(id) {
           if (!locks[id]) {
             locks[id] = true;
@@ -279,7 +287,7 @@
           }
         };
 
-        // 5. 预览
+        // 5. 在线预览
         window.onPreviewClick = function(id) {
           const f = files.find(item => item.id === id);
           if (!f) return;
@@ -325,7 +333,7 @@
           }
         };
 
-        // 7. 真实对接 FlareDrive 删除通道（DELETE /api/children/:filename）
+        // 7. WebDAV DELETE 删除接口对接
         window.onDeleteClick = function(id) {
           const f = files.find(item => item.id === id);
           if (!f) return;
@@ -333,11 +341,11 @@
           const execute = async () => {
             if (!confirm(`确定彻底删除 Cloudflare 中的文件【${f.name}】吗？`)) return;
             try {
-              const res = await fetch(`/api/children/${encodeURIComponent(f.name)}`, {
+              const res = await fetch(`/webdav/${encodeURIComponent(f.name)}`, {
                 method: 'DELETE'
               });
               if (res.ok) {
-                alert('文件已从 Cloudflare 安全销毁');
+                alert('文件已从 R2 彻底删除');
                 if (locks[id]) {
                   delete locks[id];
                   localStorage.setItem('hd_locks', JSON.stringify(locks));
@@ -362,7 +370,6 @@
           }
         };
 
-        // 弹窗控制
         function openGate(title) {
           document.getElementById('m-title').innerText = title;
           document.getElementById('m-pwd').value = '';
@@ -378,7 +385,7 @@
           if (currentAuthAction) currentAuthAction(btoa(pwd));
         };
 
-        // 启动时自动同步后端真实文件
+        // 初始拉取
         fetchChildren();
       })();
     </script>
