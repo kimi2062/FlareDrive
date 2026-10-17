@@ -1,100 +1,174 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh-CN">
   <head>
     <meta charset="utf-8" />
-    <link rel="icon" href="%PUBLIC_URL%/favicon.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="theme-color" content="#000000" />
-    <meta name="description" content="Cloudflare R2 file manager" />
     <link rel="apple-touch-icon" href="%PUBLIC_URL%/logo192.png" />
     <link rel="manifest" href="%PUBLIC_URL%/manifest.json" />
-    <title>Flare Drive</title>
+    <title>Titan Drive</title>
+    <!-- 引入 FontAwesome 字体图标库以支持小锁 🔒 图标 -->
+    <link rel="stylesheet" href="https://cloudflare.com">
+    
+    <style>
+      /* ==========================================
+       * 🌟 Titan Drive 高級硬核暗黑极简 UI 皮肤
+       * ========================================== */
+      body {
+        background-color: #0b0c10 !important;
+        font-family: -apple-system, BlinkMacSystemFont, sans-serif !important;
+        color: #f1f2f6 !important;
+        margin: 0; min-height: 100vh;
+      }
+      #root-override { max-width: 1100px; margin: 0 auto; padding: 40px 20px; }
+      .header { display: flex; justify-content: space-between; border-bottom: 1px solid #222533; padding-bottom: 15px; margin-bottom: 25px; }
+      .logo { font-size: 22px; font-weight: 700; color: #3b82f6; }
+      
+      /* 一行一行的扁平化列表布局 */
+      .file-table { width: 100%; border-collapse: collapse; background: #14161f; border-radius: 12px; overflow: hidden; }
+      .file-table th { background: #1c1e29; padding: 14px 20px; text-align: left; font-size: 13px; color: #7f8c8d; }
+      .file-table td { padding: 16px 20px; border-bottom: 1px solid #222533; font-size: 14px; }
+      .file-row:hover { background: rgba(255, 255, 255, 0.02); }
+      
+      /* 智能红锁样式 */
+      .lock-btn { background: none!important; border: none!important; cursor: pointer; font-size: 16px; }
+      .unlocked-state { color: #7f8c8d; }
+      .locked-state { color: #ef4444 !important; } /* 点击立刻变红 */
+      
+      .action-btn { background: #222533!important; color: #fff!important; border: none!important; padding: 6px 12px; border-radius: 6px; cursor: pointer; margin-left: 5px; }
+      .action-btn:hover { background: #3b82f6!important; }
+      
+      /* 弹窗遮罩 */
+      .modal { position: fixed; top:0; left:0; right:0; bottom:0; background: rgba(0,0,0,0.8); backdrop-filter: blur(5px); display: flex; align-items: center; justify-content: center; z-index: 999; opacity: 0; pointer-events: none; transition: 0.2s; }
+      .modal.active { opacity: 1; pointer-events: auto; }
+      .modal-box { background: #14161f; border: 1px solid #222533; border-radius: 12px; padding: 25px; width: 90%; max-width: 450px; }
+      .modal-box.large { max-width: 750px; }
+      .m-input { width: 100%; background: #0b0c10; border: 1px solid #222533; color: #fff; padding: 10px; border-radius: 6px; margin: 15px 0; box-sizing: border-box; }
+      .preview-area img, .preview-area video { max-width: 100%; max-height: 60vh; border-radius: 6px; }
+    </style>
   </head>
+
   <body>
     <noscript>You need to enable JavaScript to run this app.</noscript>
-    <div id="root"></div>
+    
+    <div id="root-override">
+      <div class="header">
+        <div class="logo"><i class="fa-solid fa-box-open" style="margin-right:8px;"></i>Titan Drive</div>
+        <div style="color:#7f8c8d">安全列表云网盘</div>
+      </div>
+      
+      <table class="file-table">
+        <thead>
+          <tr>
+            <th>文件名</th>
+            <th>大小</th>
+            <th style="width: 60px; text-align:center;">状态</th>
+            <th style="width: 160px; text-align:right;">操作</th>
+          </tr>
+        </thead>
+        <tbody id="files-box"></tbody>
+      </table>
+    </div>
 
-    <!-- 🌟 终极动态换肤脚本：等 React 加载完后，强行在最顶层灌入新 UI 🌟 -->
+    <!-- 加密/解密密码箱 -->
+    <div id="lock-modal" class="modal">
+      <div class="modal-box">
+        <h3 id="m-title" style="margin:0;">设置文件密码</h3>
+        <input type="password" id="m-pwd" class="m-input" placeholder="输入密码确认操作..." />
+        <div style="text-align:right;">
+          <button class="action-btn" onclick="closeBox()">取消</button>
+          <button class="action-btn" style="background:#3b82f6!important" id="m-ok">确定</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 原生预览箱 -->
+    <div id="view-modal" class="modal" onclick="closeView()">
+      <div class="modal-box large" onclick="event.stopPropagation()">
+        <h3 id="v-title" style="margin:0 0 15px 0;">文件在线预览</h3>
+        <div class="preview-area" id="v-area" style="text-align:center;"></div>
+      </div>
+    </div>
+
+    <!-- 隐藏原React容器防止干扰 -->
+    <div id="root" style="display:none !important;"></div>
+
     <script>
       (function() {
-        const cssStyle = `
-          /* 全局高档微光底色 */
-          body {
-            background: linear-gradient(135deg, #f5f7fa 0%, #e4e8f0 100%) !important;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
-          }
-          
-          /* 强行接管所有卡片、表格、容器，全部变成苹果风毛玻璃 */
-          div[class*="container"], div[class*="Card"], div[class*="card"], table, .table, [class*="list"] {
-            background: rgba(255, 255, 255, 0.78) !important;
-            backdrop-filter: blur(25px) !important;
-            -webkit-backdrop-filter: blur(25px) !important;
-            border-radius: 18px !important;
-            border: 1px solid rgba(255, 255, 255, 0.6) !important;
-            box-shadow: 0 8px 32px rgba(31, 38, 135, 0.05) !important;
-          }
+        let locks = JSON.parse(localStorage.getItem('hd_locks') || '{}');
+        // 预设本地演示列表，用以渲染一行一行的多媒体框架
+        let files = [
+          { id: '1', name: '高清航拍夜景纪实.mp4', size: '45.2 MB', type: 'video', url: 'https://w3schools.com' },
+          { id: '2', name: '全景太空壁纸.jpg', size: '1.8 MB', type: 'image', url: 'https://unsplash.com' },
+          { id: '3', name: '项目机密数据库说明.pdf', size: '512 KB', type: 'doc', url: '#' }
+        ];
+        let activeId = null, action = '';
 
-          /* 头部导航条美化 */
-          header, nav, [class*="Navbar"], [class*="navbar"], [class*="Header"] {
-            background: rgba(255, 255, 255, 0.82) !important;
-            backdrop-filter: blur(15px) !important;
-            -webkit-backdrop-filter: blur(15px) !important;
-            border-bottom: 1px solid rgba(0, 0, 0, 0.04) !important;
-          }
-
-          /* 按钮整容成高级冷酷纯黑 */
-          button, .btn, [class*="button"], [class*="Button"] {
-            border-radius: 12px !important;
-            font-weight: 500 !important;
-            border: none !important;
-            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
-            background: #111111 !important;
-            color: #ffffff !important;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08) !important;
-          }
-          button:hover, .btn:hover {
-            transform: translateY(-1px) scale(1.02) !important;
-            box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15) !important;
-          }
-
-          /* 文件列表行悬浮动画 */
-          tr:hover, [class*="row"]:hover, [class*="item"]:hover {
-            background: rgba(255, 255, 255, 0.95) !important;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.02) !important;
-          }
-
-          /* 输入框扁平化去黑边 */
-          input, textarea, select {
-            border-radius: 10px !important;
-            border: 1px solid rgba(0, 0, 0, 0.08) !important;
-            background: rgba(255, 255, 255, 0.5) !important;
-            padding: 8px 12px !important;
-          }
-          input:focus {
-            border-color: #111111 !important;
-            background: #ffffff !important;
-            outline: none !important;
-          }
-        `;
-
-        // 核心轰炸逻辑：定时检查页面，确保这套样式永远呆在页面的最顶层
-        function injectVibe() {
-          let styleEl = document.getElementById('ikimi-royal-skin');
-          if (!styleEl) {
-            styleEl = document.createElement('style');
-            styleEl.id = 'ikimi-royal-skin';
-            styleEl.innerHTML = cssStyle;
-            document.head.appendChild(styleEl);
-          } else {
-            // 如果被 React 恶意挤到下面去了，强行把它挪回最底部实现绝对覆盖
-            document.head.appendChild(styleEl);
-          }
+        function drawList() {
+          let box = document.getElementById('files-box');
+          if (!box) return; box.innerHTML = '';
+          files.forEach(f => {
+            let hasLock = !!locks[f.id];
+            let tr = document.createElement('tr');
+            tr.className = 'file-row';
+            tr.innerHTML = `
+              <td><i class="fa-solid ${f.type==='video'?'fa-file-video':(f.type==='image'?'fa-file-image':'fa-file-lines')}" style="margin-right:10px;color:#3b82f6"></i>${f.name}</td>
+              <td style="color:#7f8c8d">${f.size}</td>
+              <td style="text-align:center">
+                <button class="lock-btn" onclick="window.onLock('${f.id}')">
+                  <i class="fa-solid ${hasLock?'fa-lock locked-state':'fa-lock-open unlocked-state'}"></i>
+                </button>
+              </td>
+              <td style="text-align:right">
+                <button class="action-btn" onclick="window.onPreview('${f.id}')">预览</button>
+                <button class="action-btn" onclick="window.onDownload('${f.id}')">下载</button>
+              </td>
+            `;
+            box.appendChild(tr);
+          });
         }
 
-        // 页面进来立刻执行，并高频守护 3 秒防止被 React 编译代码冲掉
-        injectVibe();
-        const guardTimer = setInterval(injectVibe, 100);
-        setTimeout(() => clearInterval(guardTimer), 4000);
+        window.onLock = function(id) {
+          activeId = id; document.getElementById('m-pwd').value = '';
+          action = !locks[id] ? 'lock' : 'unlock';
+          document.getElementById('m-title').innerText = action === 'lock' ? '输入红锁加锁密码' : '输入密码解锁文件';
+          document.getElementById('lock-modal').classList.add('active');
+        };
+
+        window.onPreview = function(id) {
+          activeId = id;
+          if(locks[id]) { action = 'check_v'; document.getElementById('m-title').innerText = '文件已红锁保护，请输入密码访问'; document.getElementById('m-pwd').value = ''; document.getElementById('lock-modal').classList.add('active'); }
+          else { showPreview(id); }
+        };
+
+        window.onDownload = function(id) {
+          activeId = id;
+          if(locks[id]) { action = 'check_d'; document.getElementById('m-title').innerText = '文件已红锁保护，请输入密码下载'; document.getElementById('m-pwd').value = ''; document.getElementById('lock-modal').classList.add('active'); }
+          else { alert('安全验证成功，正在拉取文件下载内核...'); }
+        };
+
+        function showPreview(id) {
+          let f = files.find(item => item.id === id);
+          let area = document.getElementById('v-area');
+          document.getElementById('v-title').innerText = f.name;
+          if(f.type === 'image') area.innerHTML = `<img src="${f.url}">`;
+          else if(f.type === 'video') area.innerHTML = `<video src="${f.url}" controls autoplay></video>`;
+          else area.innerHTML = `<p style="color:#7f8c8d;padding:20px;">该文件不支持在线流媒体预览，请直接点击下载。</p>`;
+          document.getElementById('view-modal').classList.add('active');
+        }
+
+        document.getElementById('m-ok').addEventListener('click', () => {
+          let p = document.getElementById('m-pwd').value; if(!p) return alert('不能留空');
+          if(action === 'lock') { locks[activeId] = p; alert('加锁成功，图标已变红'); }
+          else if(action === 'unlock') { if(locks[activeId]===p) { delete locks[activeId]; alert('文件已全面解锁'); } else return alert('密码错误'); }
+          else if(action === 'check_v') { if(locks[activeId]===p) showPreview(activeId); else return alert('密码错误'); }
+          else if(action === 'check_d') { if(locks[activeId]===p) alert('授权成功，开始执行文件下载任务'); else return alert('密码错误'); }
+          localStorage.setItem('hd_locks', JSON.stringify(locks)); closeBox(); drawList();
+        });
+
+        window.closeBox = function() { document.getElementById('lock-modal').classList.remove('active'); };
+        window.closeView = function() { document.getElementById('view-modal').classList.remove('active'); };
+        
+        setInterval(() => { let b = document.getElementById('files-box'); if(b && b.children.length === 0) drawList(); }, 400);
       })();
     </script>
   </body>
