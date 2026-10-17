@@ -11,7 +11,22 @@
       .header { display: flex; justify-content: space-between; border-bottom: 1px solid #222533; padding-bottom: 15px; margin-bottom: 25px; align-items: center; }
       .logo { font-size: 22px; font-weight: 700; color: #3b82f6; }
       
-      .upload-panel { background: #14161f; border: 2px dashed #222533; border-radius: 12px; padding: 25px; text-align: center; margin-bottom: 25px; cursor: pointer; transition: 0.2s; display: block; }
+      /* 工具栏 & 面包屑 */
+      .toolbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; background: #14161f; padding: 12px 18px; border-radius: 10px; border: 1px solid #222533; }
+      .breadcrumbs { display: flex; align-items: center; gap: 8px; font-size: 14px; flex-wrap: wrap; }
+      .crumb-item { color: #3b82f6; cursor: pointer; text-decoration: none; }
+      .crumb-item:hover { text-decoration: underline; }
+      .crumb-sep { color: #7f8c8d; }
+      .tool-actions { display: flex; gap: 10px; }
+      
+      /* 上传与操作按钮 */
+      .ctrl-btn { background: #222533; color: #fff; border: 1px solid #2e3446; padding: 7px 14px; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 500; display: inline-flex; align-items: center; gap: 6px; }
+      .ctrl-btn:hover { background: #3b82f6; border-color: #3b82f6; }
+      .ctrl-btn.primary { background: #3b82f6; border-color: #3b82f6; }
+      .ctrl-btn.primary:hover { background: #2563eb; }
+
+      /* 极速上传舱 */
+      .upload-panel { background: #14161f; border: 2px dashed #222533; border-radius: 12px; padding: 22px; text-align: center; margin-bottom: 20px; cursor: pointer; transition: 0.2s; display: block; }
       .upload-panel:hover { border-color: #3b82f6; background: #171a26; }
       .progress-container { margin-top: 15px; background: #0b0c10; padding: 12px; border-radius: 8px; display: none; text-align: left; border: 1px solid #222533; }
       .progress-meta { display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 8px; }
@@ -19,46 +34,55 @@
       .progress-bar-bg { width: 100%; height: 6px; background: #222533; border-radius: 3px; overflow: hidden; }
       .progress-bar-fill { width: 0%; height: 100%; background: linear-gradient(to right, #3b82f6, #10b981); transition: width 0.1s linear; }
       
+      /* 文件列表表格 */
       .file-table { width: 100%; border-collapse: collapse; background: #14161f; border-radius: 12px; overflow: hidden; }
       .file-table th { background: #1c1e29; padding: 14px 20px; text-align: left; font-size: 13px; color: #7f8c8d; }
-      .file-table td { padding: 16px 20px; border-bottom: 1px solid #222533; font-size: 14px; }
+      .file-table td { padding: 14px 20px; border-bottom: 1px solid #222533; font-size: 14px; }
       .file-row:hover { background: rgba(255, 255, 255, 0.02); }
       
-      .lock-btn { background: none !important; border: none !important; cursor: pointer; font-size: 18px; padding: 5px; }
-      .action-btn { background: #222533 !important; color: #fff !important; border: none !important; padding: 6px 12px; border-radius: 6px; cursor: pointer; margin-left: 5px; font-size: 13px; }
+      .dir-link { color: #f1f2f6; cursor: pointer; font-weight: 500; text-decoration: none; }
+      .dir-link:hover { color: #3b82f6; }
+      
+      .lock-btn { background: none !important; border: none !important; cursor: pointer; font-size: 17px; padding: 4px; }
+      .action-btn { background: #222533 !important; color: #fff !important; border: none !important; padding: 5px 10px; border-radius: 6px; cursor: pointer; margin-left: 4px; font-size: 12.5px; }
       .action-btn:hover { background: #3b82f6 !important; }
-      .delete-btn { background: #222533 !important; color: #ef4444 !important; border: none !important; padding: 6px 12px; border-radius: 6px; cursor: pointer; margin-left: 5px; font-size: 13px; }
+      .delete-btn { background: #222533 !important; color: #ef4444 !important; border: none !important; padding: 5px 10px; border-radius: 6px; cursor: pointer; margin-left: 4px; font-size: 12.5px; }
       .delete-btn:hover { background: #ef4444 !important; color: #fff !important; }
       
+      /* 弹窗通用样式 */
       .modal { position: fixed; top:0; left:0; right:0; bottom:0; background: rgba(0,0,0,0.8); backdrop-filter: blur(5px); display: flex; align-items: center; justify-content: center; z-index: 999; opacity: 0; pointer-events: none; transition: 0.2s; }
       .modal.active { opacity: 1; pointer-events: auto; }
       .modal-box { background: #14161f; border: 1px solid #222533; border-radius: 12px; padding: 25px; width: 90%; max-width: 450px; }
       .modal-box.large { max-width: 800px; }
-      .m-input { width: 100%; background: #0b0c10; border: 1px solid #222533; color: #fff; padding: 10px; border-radius: 6px; margin: 15px 0; box-sizing: border-box; }
+      .m-input { width: 100%; background: #0b0c10; border: 1px solid #222533; color: #fff; padding: 10px; border-radius: 6px; margin: 15px 0; box-sizing: border-box; font-size: 14px; }
       .preview-area img, .preview-area video { max-width: 100%; max-height: 65vh; border-radius: 6px; }
     </style>
   </head>
 
   <body>
-    <noscript>You need to enable JavaScript to run this app.</noscript>
-    
     <div id="root-override">
       <div class="header">
         <div class="logo">📂 Titan Drive</div>
         <div style="font-size:13px; color:#7f8c8d">原生 WebDAV 存储节点已连接</div>
       </div>
       
-      <!-- 极速直传舱 -->
+      <!-- 工具栏：面包屑路径导航 + 新建文件夹 + 上传文件夹 -->
+      <div class="toolbar">
+        <div class="breadcrumbs" id="breadcrumb-box">
+          <span class="crumb-item" onclick="navigateTo('/')">根目录</span>
+        </div>
+        <div class="tool-actions">
+          <button class="ctrl-btn" onclick="openNewFolderModal()">📁 新建文件夹</button>
+          <button class="ctrl-btn" onclick="document.getElementById('hidden-folder-input').click()">📦 上传文件夹</button>
+        </div>
+      </div>
+
+      <!-- 单文件上传舱 -->
       <label class="upload-panel" for="hidden-file-input">
-        <input 
-          type="file" 
-          id="hidden-file-input" 
-          style="display:none;" 
-          onclick="event.stopPropagation()" 
-          onchange="handleWebDAVUpload(this.files); this.value='';" 
-        />
-        <div style="font-size: 16px; font-weight: 600; margin-bottom: 5px;">⚡ 极速直传至 Cloudflare R2</div>
-        <div style="font-size: 13px; color: #7f8c8d;">点击或拖拽文件到此区域，直连 WebDAV 通道上传</div>
+        <input type="file" id="hidden-file-input" style="display:none;" multiple onclick="event.stopPropagation()" onchange="handleFilesUpload(this.files); this.value='';" />
+        <input type="file" id="hidden-folder-input" style="display:none;" webkitdirectory directory multiple onclick="event.stopPropagation()" onchange="handleFolderUpload(this.files); this.value='';" />
+        <div style="font-size: 15px; font-weight: 600; margin-bottom: 4px;">⚡ 点击选择或拖拽文件直传至当前目录</div>
+        <div style="font-size: 12.5px; color: #7f8c8d;">支持批量文件、整包目录结构无损同步上载</div>
         
         <div id="upload-progress-panel" class="progress-container" onclick="event.stopPropagation()">
           <div class="progress-meta">
@@ -76,244 +100,425 @@
       <table class="file-table">
         <thead>
           <tr>
-            <th>文件名</th>
+            <th>名称</th>
             <th>大小</th>
-            <th style="width: 80px; text-align:center;">状态</th>
-            <th style="width: 240px; text-align:right;">操作</th>
+            <th style="width: 70px; text-align:center;">状态</th>
+            <th style="width: 280px; text-align:right;">操作</th>
           </tr>
         </thead>
         <tbody id="files-box">
-          <tr><td colspan="4" style="text-align:center;color:#7f8c8d;padding:25px;">正在通过 WebDAV 解析存储桶文件...</td></tr>
+          <tr><td colspan="4" style="text-align:center;color:#7f8c8d;padding:25px;">正在加载目录...</td></tr>
         </tbody>
       </table>
     </div>
 
-    <!-- 鉴权拦截弹窗 -->
+    <!-- 弹窗 1：密码核验拦截 -->
     <div id="lock-modal" class="modal">
       <div class="modal-box">
         <h3 id="m-title" style="margin:0;">权限安全拦截</h3>
         <input type="password" id="m-pwd" class="m-input" placeholder="请输入访问密钥..." />
         <div style="text-align:right;">
-          <button class="action-btn" onclick="closeBox()">取消</button>
+          <button class="action-btn" onclick="closeBox('lock-modal')">取消</button>
           <button class="action-btn" style="background:#3b82f6 !important" id="m-ok">核验密码</button>
         </div>
       </div>
     </div>
 
-    <!-- 在线预览弹窗 -->
-    <div id="view-modal" class="modal" onclick="closeView()">
+    <!-- 弹窗 2：新建文件夹 -->
+    <div id="folder-modal" class="modal">
+      <div class="modal-box">
+        <h3 style="margin:0;">新建文件夹</h3>
+        <input type="text" id="new-folder-name" class="m-input" placeholder="请输入文件夹名称（如：资料备份）" />
+        <div style="text-align:right;">
+          <button class="action-btn" onclick="closeBox('folder-modal')">取消</button>
+          <button class="action-btn" style="background:#3b82f6 !important" onclick="submitNewFolder()">确认创建</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 弹窗 3：移动文件/文件夹 -->
+    <div id="move-modal" class="modal">
+      <div class="modal-box">
+        <h3 style="margin:0;">移动至目标路径</h3>
+        <p style="font-size:12px;color:#7f8c8d;margin:8px 0 0 0;">输入目标目录绝对路径，以 / 结尾（例：/照片/ 或 / 为根目录）</p>
+        <input type="text" id="move-dest-input" class="m-input" placeholder="/" />
+        <div style="text-align:right;">
+          <button class="action-btn" onclick="closeBox('move-modal')">取消</button>
+          <button class="action-btn" style="background:#3b82f6 !important" onclick="submitMove()">执行移动</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 弹窗 4：在线预览 -->
+    <div id="view-modal" class="modal" onclick="closeBox('view-modal')">
       <div class="modal-box large" onclick="event.stopPropagation()">
         <h3 id="v-title" style="margin:0 0 15px 0;">文件在线预览</h3>
         <div class="preview-area" id="v-area" style="text-align:center;"></div>
       </div>
     </div>
 
-    <div id="root" style="display:none !important;"></div>
-
     <script>
       (function() {
-        const SEC_KEY = "aWtpbWk1MjA="; // 默认指令暗码: ikimi520
+        const SEC_KEY = "aWtpbWk1MjA="; 
         let locks = JSON.parse(localStorage.getItem('hd_locks') || '{}');
+        let currentPath = "/"; // 当前工作目录，始终以 / 开头和结尾
         let files = [];
         let currentAuthAction = null;
+        let movingTargetItem = null;
 
         function formatBytes(bytes) {
-          if (!bytes || bytes === 0) return '0 B';
+          if (!bytes || bytes === 0) return '-';
           const k = 1024;
           const sizes = ['B', 'KB', 'MB', 'GB'];
           const i = Math.floor(Math.log(bytes) / Math.log(k));
           return (bytes / Math.pow(k, i)).toFixed(1) + ' ' + sizes[i];
         }
 
-        // 1. 发起标准 WebDAV PROPFIND 请求解析文件列表
-        async function fetchChildren() {
+        // 规范化 WebDAV 路径前缀
+        function getWebDAVPath(subPath) {
+          let p = (currentPath + (subPath || '')).replace(/\/+/g, '/');
+          if (!p.startsWith('/')) p = '/' + p;
+          return '/webdav' + p;
+        }
+
+        // 渲染面包屑
+        function renderBreadcrumbs() {
+          const box = document.getElementById('breadcrumb-box');
+          box.innerHTML = '';
+          const parts = currentPath.split('/').filter(Boolean);
+          
+          let rootSpan = document.createElement('span');
+          rootSpan.className = 'crumb-item';
+          rootSpan.innerText = '根目录';
+          rootSpan.onclick = () => navigateTo('/');
+          box.appendChild(rootSpan);
+
+          let builtPath = '/';
+          parts.forEach((part, idx) => {
+            builtPath += part + '/';
+            const thisPath = builtPath;
+            
+            let sep = document.createElement('span');
+            sep.className = 'crumb-sep';
+            sep.innerText = '/';
+            box.appendChild(sep);
+
+            let item = document.createElement('span');
+            item.className = 'crumb-item';
+            item.innerText = part;
+            item.onclick = () => navigateTo(thisPath);
+            box.appendChild(item);
+          });
+        }
+
+        window.navigateTo = function(targetPath) {
+          currentPath = targetPath.replace(/\/+/g, '/');
+          if (!currentPath.endsWith('/')) currentPath += '/';
+          fetchDirectory();
+        };
+
+        // 1. 发送 WebDAV PROPFIND 列取当前目录
+        async function fetchDirectory() {
+          renderBreadcrumbs();
+          const targetUrl = getWebDAVPath();
           try {
-            const res = await fetch('/webdav/', {
+            const res = await fetch(targetUrl, {
               method: 'PROPFIND',
               headers: { 'Depth': '1' }
             });
-            
-            if (!res.ok) throw new Error('WebDAV 响应状态: ' + res.status);
-            
+            if (!res.ok) throw new Error('WebDAV HTTP: ' + res.status);
+
             const xmlText = await res.text();
             const parser = new DOMParser();
             const xmlDoc = parser.parseFromString(xmlText, "text/xml");
             const responses = Array.from(xmlDoc.getElementsByTagNameNS("*", "response"));
-            
+
             files = [];
-            // 跳过首项（目录本身）
-            for (let i = 1; i < responses.length; i++) {
+            // 当前文件夹的 URI 标记，用于比对排除自身
+            const normalizedCurUri = targetUrl.replace(/\/$/, '');
+
+            for (let i = 0; i < responses.length; i++) {
               const href = responses[i].getElementsByTagNameNS("*", "href")[0]?.textContent || '';
               const cleanHref = href.replace(/\/$/, '');
-              const name = decodeURIComponent(cleanHref.split('/').pop());
               
-              // 过滤 FlareDrive 内部缩略图缓存文件夹
-              if (name === '_$flaredrive$' || name === '') continue;
+              // 排除当前正在请求的自身目录
+              if (cleanHref.endsWith(normalizedCurUri) || cleanHref === normalizedCurUri) continue;
+
+              const resType = responses[i].getElementsByTagNameNS("*", "resourcetype")[0];
+              const isCollection = resType && resType.getElementsByTagNameNS("*", "collection").length > 0;
+              
+              const rawName = cleanHref.split('/').pop();
+              const name = decodeURIComponent(rawName);
+              if (name === '_$flaredrive$' || !name) continue;
 
               const sizeTag = responses[i].getElementsByTagNameNS("*", "getcontentlength")[0];
               const sizeBytes = sizeTag ? parseInt(sizeTag.textContent || '0') : 0;
               
               const ext = name.split('.').pop().toLowerCase();
-              let fType = 'doc';
-              if (['png', 'jpg', 'jpeg', 'gif', 'webp', 'svg'].includes(ext)) fType = 'image';
-              else if (['mp4', 'webm', 'mov', 'mkv'].includes(ext)) fType = 'video';
-              
-              const fileUrl = href.startsWith('http') ? href : (location.origin + href);
+              let fType = isCollection ? 'folder' : 'doc';
+              if (!isCollection) {
+                if (['png', 'jpg', 'jpeg', 'gif', 'webp', 'svg'].includes(ext)) fType = 'image';
+                else if (['mp4', 'webm', 'mov', 'mkv'].includes(ext)) fType = 'video';
+              }
 
               files.push({
-                id: name,
                 name: name,
-                size: formatBytes(sizeBytes),
+                isFolder: isCollection,
+                size: isCollection ? '-' : formatBytes(sizeBytes),
                 type: fType,
-                url: fileUrl
+                url: href.startsWith('http') ? href : (location.origin + href)
               });
             }
-            
+
+            // 排序：文件夹置顶，其次按名称排列
+            files.sort((a, b) => {
+              if (a.isFolder === b.isFolder) return a.name.localeCompare(b.name);
+              return a.isFolder ? -1 : 1;
+            });
+
             drawList();
           } catch (e) {
             console.error(e);
             document.getElementById('files-box').innerHTML = 
-              `<tr><td colspan="4" style="text-align:center;color:#ef4444;padding:25px;">无法读取 WebDAV 列表（状态码异常或解析失败），请确认是否已执行 Redeploy。</td></tr>`;
+              `<tr><td colspan="4" style="text-align:center;color:#ef4444;padding:25px;">目录读取失败，请检查网络或后端状态。</td></tr>`;
           }
         }
 
-        // 2. 渲染文件列表
+        // 2. 渲染视图
         function drawList() {
           const box = document.getElementById('files-box');
           if (!box) return;
+          box.innerHTML = '';
+
+          // 若不在根目录，增加快速返回上一级选项
+          if (currentPath !== '/') {
+            const upTr = document.createElement('tr');
+            upTr.className = 'file-row';
+            upTr.innerHTML = `
+              <td colspan="4">
+                <span class="dir-link" onclick="navigateUp()">📁 .. [返回上一层目录]</span>
+              </td>
+            `;
+            box.appendChild(upTr);
+          }
+
           if (files.length === 0) {
-            box.innerHTML = '<tr><td colspan="4" style="text-align:center;color:#7f8c8d;padding:30px;">存储桶暂无文件，点击上方上传舱开始上传</td></tr>';
+            let emptyTr = document.createElement('tr');
+            emptyTr.innerHTML = `<td colspan="4" style="text-align:center;color:#7f8c8d;padding:30px;">当前文件夹为空</td>`;
+            box.appendChild(emptyTr);
             return;
           }
-          box.innerHTML = '';
+
           files.forEach(f => {
-            const hasLock = !!locks[f.id];
+            const fullId = (currentPath + f.name).replace(/\/+/g, '/');
+            const hasLock = !!locks[fullId];
             const tr = document.createElement('tr');
             tr.className = 'file-row';
+
+            let icon = '📄';
+            if (f.isFolder) icon = '📁';
+            else if (f.type === 'video') icon = '🎬';
+            else if (f.type === 'image') icon = '🖼️';
+
+            const nameHtml = f.isFolder 
+              ? `<span class="dir-link" onclick="navigateTo('${(currentPath + f.name + '/').replace(/\/+/g, '/')}')">${icon} ${f.name}</span>`
+              : `${icon} ${f.name}`;
+
             tr.innerHTML = `
-              <td>${f.type === 'video' ? '🎬' : (f.type === 'image' ? '🖼️' : '📄')} ${f.name}</td>
+              <td>${nameHtml}</td>
               <td style="color:#7f8c8d">${f.size}</td>
               <td style="text-align:center">
-                <button class="lock-btn" onclick="window.onLockClick('${f.id}')">
+                <button class="lock-btn" onclick="window.onLockClick('${fullId}')">
                   <span>${hasLock ? '🔴' : '🔓'}</span>
                 </button>
               </td>
               <td style="text-align:right">
-                <button class="action-btn" onclick="window.onPreviewClick('${f.id}')">预览</button>
-                <button class="action-btn" onclick="window.onDownloadClick('${f.id}')">下载</button>
-                <button class="delete-btn" onclick="window.onDeleteClick('${f.id}')">删除 🗑️</button>
+                ${!f.isFolder ? `<button class="action-btn" onclick="window.onPreviewClick('${fullId}')">预览</button>` : ''}
+                ${!f.isFolder ? `<button class="action-btn" onclick="window.onDownloadClick('${fullId}')">下载</button>` : ''}
+                <button class="action-btn" style="background:#2a334a !important;" onclick="window.onMoveClick('${f.name}')">移动</button>
+                <button class="delete-btn" onclick="window.onDeleteClick('${f.name}', '${fullId}', ${f.isFolder})">删除 🗑️</button>
               </td>
             `;
             box.appendChild(tr);
           });
         }
 
-        // 3. WebDAV PUT 上传接口对接
-        window.handleWebDAVUpload = function(uploadedFiles) {
-          if (!uploadedFiles || uploadedFiles.length === 0) return;
-          const file = uploadedFiles[0];
-          const panel = document.getElementById('upload-progress-panel');
-          const bar = document.getElementById('upload-bar-fill');
-          const nameTag = document.getElementById('upload-filename-tag');
-          const pctTag = document.getElementById('upload-percent-tag');
-          const speedTag = document.getElementById('upload-speed-tag');
-
-          panel.style.display = 'block';
-          nameTag.innerText = `正在直传: ${file.name}`;
-
-          const xhr = new XMLHttpRequest();
-          let startTime = Date.now();
-          let loadedPrev = 0;
-
-          xhr.upload.onprogress = (e) => {
-            if (e.lengthComputable) {
-              const now = Date.now();
-              const duration = (now - startTime) / 1000 || 0.1;
-              const speed = (((e.loaded - loadedPrev) / duration) / (1024 * 1024)).toFixed(2);
-              const pct = Math.round((e.loaded / e.total) * 100);
-
-              pctTag.innerText = `${pct}%`;
-              speedTag.innerText = `${speed} MB/s`;
-              bar.style.width = `${pct}%`;
-
-              startTime = now;
-              loadedPrev = e.loaded;
-            }
-          };
-
-          xhr.onload = () => {
-            if (xhr.status >= 200 && xhr.status < 300) {
-              setTimeout(() => {
-                alert('🎉 文件成功写入 R2 存储桶！');
-                panel.style.display = 'none';
-                bar.style.width = '0%';
-                fetchChildren();
-              }, 300);
-            } else {
-              alert('上载失败，状态码: ' + xhr.status);
-              panel.style.display = 'none';
-            }
-          };
-
-          xhr.onerror = () => {
-            alert('网络异常，无法连接 Cloudflare 节点');
-            panel.style.display = 'none';
-          };
-
-          xhr.open("PUT", `/webdav/${encodeURIComponent(file.name)}`);
-          xhr.setRequestHeader("Content-Type", file.type || "application/octet-stream");
-          xhr.send(file);
+        window.navigateUp = function() {
+          const parts = currentPath.split('/').filter(Boolean);
+          parts.pop();
+          navigateTo('/' + (parts.length > 0 ? parts.join('/') + '/' : ''));
         };
 
-        // 4. 加锁 / 解锁控制
-        window.onLockClick = function(id) {
-          if (!locks[id]) {
-            locks[id] = true;
+        // 3. WebDAV MKCOL 新建文件夹
+        window.openNewFolderModal = function() {
+          document.getElementById('new-folder-name').value = '';
+          document.getElementById('folder-modal').classList.add('active');
+        };
+
+        window.submitNewFolder = async function() {
+          const folderName = document.getElementById('new-folder-name').value.trim();
+          if (!folderName) return alert('文件夹名称不能为空');
+          closeBox('folder-modal');
+
+          const destUrl = getWebDAVPath(encodeURIComponent(folderName) + '/');
+          try {
+            const res = await fetch(destUrl, { method: 'MKCOL' });
+            if (res.ok || res.status === 201) {
+              fetchDirectory();
+            } else {
+              alert('新建文件夹失败，状态码: ' + res.status);
+            }
+          } catch(e) {
+            alert('网络异常，无法创建文件夹');
+          }
+        };
+
+        // 4. WebDAV MOVE 移动文件/目录
+        window.onMoveClick = function(name) {
+          movingTargetItem = name;
+          document.getElementById('move-dest-input').value = currentPath;
+          document.getElementById('move-modal').classList.add('active');
+        };
+
+        window.submitMove = async function() {
+          let destDir = document.getElementById('move-dest-input').value.trim();
+          if (!destDir.startsWith('/')) destDir = '/' + destDir;
+          if (!destDir.endsWith('/')) destDir += '/';
+          
+          closeBox('move-modal');
+          const sourceUrl = getWebDAVPath(encodeURIComponent(movingTargetItem));
+          const targetUrl = ('/webdav' + destDir + encodeURIComponent(movingTargetItem)).replace(/\/+/g, '/');
+
+          try {
+            const res = await fetch(sourceUrl, {
+              method: 'MOVE',
+              headers: {
+                'Destination': targetUrl,
+                'Overwrite': 'F'
+              }
+            });
+            if (res.ok || res.status === 201 || res.status === 204) {
+              fetchDirectory();
+            } else {
+              alert('移动失败，错误码: ' + res.status);
+            }
+          } catch(e) {
+            alert('网络异常，未能移动');
+          }
+        };
+
+        // 5. 顺序/并发上传调度器
+        async function uploadSingleFile(file, remoteSubPath) {
+          const destUrl = getWebDAVPath(remoteSubPath);
+          return new Promise((resolve, reject) => {
+            const xhr = new XMLHttpRequest();
+            xhr.open("PUT", destUrl);
+            xhr.setRequestHeader("Content-Type", file.type || "application/octet-stream");
+            xhr.onload = () => (xhr.status >= 200 && xhr.status < 300) ? resolve() : reject(xhr.status);
+            xhr.onerror = () => reject('NetErr');
+            xhr.send(file);
+          });
+        }
+
+        // 上传文件列表（支持单文件与多选）
+        window.handleFilesUpload = async function(fileList) {
+          if (!fileList || fileList.length === 0) return;
+          const panel = document.getElementById('upload-progress-panel');
+          const bar = document.getElementById('upload-bar-fill');
+          panel.style.display = 'block';
+
+          for (let i = 0; i < fileList.length; i++) {
+            const file = fileList[i];
+            document.getElementById('upload-filename-tag').innerText = `上传 (${i+1}/${fileList.length}): ${file.name}`;
+            const pct = Math.round(((i + 1) / fileList.length) * 100);
+            bar.style.width = pct + '%';
+            document.getElementById('upload-percent-tag').innerText = pct + '%';
+            try {
+              await uploadSingleFile(file, encodeURIComponent(file.name));
+            } catch (err) {
+              console.error(err);
+            }
+          }
+
+          setTimeout(() => {
+            panel.style.display = 'none';
+            bar.style.width = '0%';
+            fetchDirectory();
+          }, 300);
+        };
+
+        // 上传整包文件夹（递归按结构直传）
+        window.handleFolderUpload = async function(fileList) {
+          if (!fileList || fileList.length === 0) return;
+          const panel = document.getElementById('upload-progress-panel');
+          const bar = document.getElementById('upload-bar-fill');
+          panel.style.display = 'block';
+
+          for (let i = 0; i < fileList.length; i++) {
+            const file = fileList[i];
+            // 获取如 "myFolder/sub/a.txt" 的相对路径
+            const relPath = file.webkitRelativePath || file.name;
+            const encodedRelPath = relPath.split('/').map(encodeURIComponent).join('/');
+            
+            document.getElementById('upload-filename-tag').innerText = `同步目录 (${i+1}/${fileList.length}): ${file.name}`;
+            const pct = Math.round(((i + 1) / fileList.length) * 100);
+            bar.style.width = pct + '%';
+            document.getElementById('upload-percent-tag').innerText = pct + '%';
+
+            try {
+              await uploadSingleFile(file, encodedRelPath);
+            } catch (err) {
+              console.error(err);
+            }
+          }
+
+          setTimeout(() => {
+            panel.style.display = 'none';
+            bar.style.width = '0%';
+            fetchDirectory();
+          }, 400);
+        };
+
+        // 6. 加锁/密码拦截与删除
+        window.onLockClick = function(fullId) {
+          if (!locks[fullId]) {
+            locks[fullId] = true;
             localStorage.setItem('hd_locks', JSON.stringify(locks));
-            alert('🔒 文件已一键加锁，红点 🔴 拦截模式已激活');
             drawList();
           } else {
             currentAuthAction = (authKey) => {
               if (authKey === SEC_KEY) {
-                delete locks[id];
+                delete locks[fullId];
                 localStorage.setItem('hd_locks', JSON.stringify(locks));
-                alert('🔓 解锁成功，文件恢复公开状态');
                 drawList();
-              } else {
-                alert('🚨 密码不正确，拒绝解锁！');
-              }
+              } else alert('🚨 密码不正确！');
             };
             openGate('🔓 解除文件加密验证');
           }
         };
 
-        // 5. 在线预览
-        window.onPreviewClick = function(id) {
-          const f = files.find(item => item.id === id);
+        window.onPreviewClick = function(fullId) {
+          const name = fullId.split('/').pop();
+          const f = files.find(item => item.name === name);
           if (!f) return;
           const execute = () => {
             const area = document.getElementById('v-area');
             document.getElementById('v-title').innerText = f.name;
             if (f.type === 'image') area.innerHTML = `<img src="${f.url}">`;
             else if (f.type === 'video') area.innerHTML = `<video src="${f.url}" controls autoplay></video>`;
-            else area.innerHTML = `<p style="color:#7f8c8d;padding:20px;">该格式不支持在线预览，请直接下载查看。</p>`;
+            else area.innerHTML = `<p style="color:#7f8c8d;padding:20px;">该格式不支持在线预览</p>`;
             document.getElementById('view-modal').classList.add('active');
           };
 
-          if (locks[id]) {
-            currentAuthAction = (authKey) => {
-              if (authKey === SEC_KEY) execute();
-              else alert('🚨 密码错误，拦截预览！');
-            };
-            openGate('👁️ 预览受限：请输入安全密码');
-          } else {
-            execute();
-          }
+          if (locks[fullId]) {
+            currentAuthAction = (authKey) => authKey === SEC_KEY ? execute() : alert('🚨 密码错误！');
+            openGate('👁️ 预览受限：请输入密码');
+          } else execute();
         };
 
-        // 6. 下载
-        window.onDownloadClick = function(id) {
-          const f = files.find(item => item.id === id);
+        window.onDownloadClick = function(fullId) {
+          const name = fullId.split('/').pop();
+          const f = files.find(item => item.name === name);
           if (!f) return;
           const execute = () => {
             const a = document.createElement('a');
@@ -322,52 +527,36 @@
             a.click();
           };
 
-          if (locks[id]) {
-            currentAuthAction = (authKey) => {
-              if (authKey === SEC_KEY) execute();
-              else alert('🚨 密码错误，拦截下载！');
-            };
-            openGate('📥 下载受限：请输入安全密码');
-          } else {
-            execute();
-          }
+          if (locks[fullId]) {
+            currentAuthAction = (authKey) => authKey === SEC_KEY ? execute() : alert('🚨 密码错误！');
+            openGate('📥 下载受限：请输入密码');
+          } else execute();
         };
 
-        // 7. WebDAV DELETE 删除接口对接
-        window.onDeleteClick = function(id) {
-          const f = files.find(item => item.id === id);
-          if (!f) return;
-          
+        window.onDeleteClick = function(name, fullId, isFolder) {
           const execute = async () => {
-            if (!confirm(`确定彻底删除 Cloudflare 中的文件【${f.name}】吗？`)) return;
+            const tip = isFolder ? `确定删除文件夹【${name}】及其内部所有内容吗？` : `确定彻底删除文件【${name}】吗？`;
+            if (!confirm(tip)) return;
             try {
-              const res = await fetch(`/webdav/${encodeURIComponent(f.name)}`, {
-                method: 'DELETE'
-              });
-              if (res.ok) {
-                alert('文件已从 R2 彻底删除');
-                if (locks[id]) {
-                  delete locks[id];
+              const res = await fetch(getWebDAVPath(encodeURIComponent(name)), { method: 'DELETE' });
+              if (res.ok || res.status === 204) {
+                if (locks[fullId]) {
+                  delete locks[fullId];
                   localStorage.setItem('hd_locks', JSON.stringify(locks));
                 }
-                fetchChildren();
+                fetchDirectory();
               } else {
                 alert('删除失败，状态码: ' + res.status);
               }
-            } catch (e) {
-              alert('请求失败，请稍后重试');
+            } catch(e) {
+              alert('请求失败');
             }
           };
 
-          if (locks[id]) {
-            currentAuthAction = (authKey) => {
-              if (authKey === SEC_KEY) execute();
-              else alert('🚨 密码错误，无法执行删除！');
-            };
-            openGate('🗑️ 危险操作：删除加锁文件验证');
-          } else {
-            execute();
-          }
+          if (locks[fullId]) {
+            currentAuthAction = (authKey) => authKey === SEC_KEY ? execute() : alert('🚨 密码错误！');
+            openGate('🗑️ 危险操作：删除加锁项目验证');
+          } else execute();
         };
 
         function openGate(title) {
@@ -376,17 +565,18 @@
           document.getElementById('lock-modal').classList.add('active');
         }
 
-        window.closeBox = function() { document.getElementById('lock-modal').classList.remove('active'); };
-        window.closeView = function() { document.getElementById('view-modal').classList.remove('active'); };
+        window.closeBox = function(id) {
+          document.getElementById(id).classList.remove('active');
+        };
 
         document.getElementById('m-ok').onclick = () => {
           const pwd = document.getElementById('m-pwd').value;
-          closeBox();
+          closeBox('lock-modal');
           if (currentAuthAction) currentAuthAction(btoa(pwd));
         };
 
-        // 初始拉取
-        fetchChildren();
+        // 启动进入根目录
+        fetchDirectory();
       })();
     </script>
   </body>
