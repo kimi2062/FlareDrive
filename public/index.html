@@ -6,8 +6,6 @@
     <link rel="apple-touch-icon" href="%PUBLIC_URL%/logo192.png" />
     <link rel="manifest" href="%PUBLIC_URL%/manifest.json" />
     <title>Titan Drive</title>
-    <!-- 引入 FontAwesome 字体图标库以支持小锁 🔒 图标 -->
-    <link rel="stylesheet" href="https://cloudflare.com">
     
     <style>
       /* ==========================================
@@ -29,13 +27,14 @@
       .file-table td { padding: 16px 20px; border-bottom: 1px solid #222533; font-size: 14px; }
       .file-row:hover { background: rgba(255, 255, 255, 0.02); }
       
-      /* 智能红锁样式 */
-      .lock-btn { background: none!important; border: none!important; cursor: pointer; font-size: 16px; }
-      .unlocked-state { color: #7f8c8d; }
-      .locked-state { color: #ef4444 !important; } /* 点击立刻变红 */
+      /* 智能红锁与通用样式 */
+      .lock-btn { background: none!important; border: none!important; cursor: pointer; font-size: 18px; padding: 5px; }
+      .locked-state { filter: drop-shadow(0 0 4px #ef4444); } /* 激活红光保护 */
       
       .action-btn { background: #222533!important; color: #fff!important; border: none!important; padding: 6px 12px; border-radius: 6px; cursor: pointer; margin-left: 5px; }
       .action-btn:hover { background: #3b82f6!important; }
+      .delete-btn { background: #222533!important; color: #ef4444!important; border: none!important; padding: 6px 12px; border-radius: 6px; cursor: pointer; margin-left: 5px; }
+      .delete-btn:hover { background: #ef4444!important; color: #fff!important; }
       
       /* 弹窗遮罩 */
       .modal { position: fixed; top:0; left:0; right:0; bottom:0; background: rgba(0,0,0,0.8); backdrop-filter: blur(5px); display: flex; align-items: center; justify-content: center; z-index: 999; opacity: 0; pointer-events: none; transition: 0.2s; }
@@ -52,7 +51,7 @@
     
     <div id="root-override">
       <div class="header">
-        <div class="logo"><i class="fa-solid fa-box-open" style="margin-right:8px;"></i>Titan Drive</div>
+        <div class="logo">📂 Titan Drive</div>
         <div style="color:#7f8c8d">安全列表云网盘</div>
       </div>
       
@@ -61,8 +60,8 @@
           <tr>
             <th>文件名</th>
             <th>大小</th>
-            <th style="width: 60px; text-align:center;">状态</th>
-            <th style="width: 160px; text-align:right;">操作</th>
+            <th style="width: 80px; text-align:center;">状态</th>
+            <th style="width: 240px; text-align:right;">操作</th>
           </tr>
         </thead>
         <tbody id="files-box"></tbody>
@@ -95,7 +94,7 @@
     <script>
       (function() {
         let locks = JSON.parse(localStorage.getItem('hd_locks') || '{}');
-        // 预设本地演示列表，用以渲染一行一行的多媒体框架
+        // 初始化数据
         let files = [
           { id: '1', name: '高清航拍夜景纪实.mp4', size: '45.2 MB', type: 'video', url: 'https://w3schools.com' },
           { id: '2', name: '全景太空壁纸.jpg', size: '1.8 MB', type: 'image', url: 'https://unsplash.com' },
@@ -111,16 +110,17 @@
             let tr = document.createElement('tr');
             tr.className = 'file-row';
             tr.innerHTML = `
-              <td><i class="fa-solid ${f.type==='video'?'fa-file-video':(f.type==='image'?'fa-file-image':'fa-file-lines')}" style="margin-right:10px;color:#3b82f6"></i>${f.name}</td>
+              <td>${f.type==='video'?'🎬':(f.type==='image'?'🖼️':'📄')} ${f.name}</td>
               <td style="color:#7f8c8d">${f.size}</td>
               <td style="text-align:center">
                 <button class="lock-btn" onclick="window.onLock('${f.id}')">
-                  <i class="fa-solid ${hasLock?'fa-lock locked-state':'fa-lock-open unlocked-state'}"></i>
+                  <span class="${hasLock?'locked-state':''}">${hasLock?'🔴':'🔓'}</span>
                 </button>
               </td>
               <td style="text-align:right">
                 <button class="action-btn" onclick="window.onPreview('${f.id}')">预览</button>
                 <button class="action-btn" onclick="window.onDownload('${f.id}')">下载</button>
+                <button class="delete-btn" onclick="window.onDelete('${f.id}')">删除 🗑️</button>
               </td>
             `;
             box.appendChild(tr);
@@ -130,20 +130,31 @@
         window.onLock = function(id) {
           activeId = id; document.getElementById('m-pwd').value = '';
           action = !locks[id] ? 'lock' : 'unlock';
-          document.getElementById('m-title').innerText = action === 'lock' ? '输入红锁加锁密码' : '输入密码解锁文件';
+          document.getElementById('m-title').innerText = action === 'lock' ? '一键加锁：设置拦截密码' : '一键解锁：输入密码恢复公开';
           document.getElementById('lock-modal').classList.add('active');
         };
 
         window.onPreview = function(id) {
           activeId = id;
-          if(locks[id]) { action = 'check_v'; document.getElementById('m-title').innerText = '文件已红锁保护，请输入密码访问'; document.getElementById('m-pwd').value = ''; document.getElementById('lock-modal').classList.add('active'); }
+          if(locks[id]) { action = 'check_v'; document.getElementById('m-title').innerText = '🔒 文件已受红锁保护，请输入密码预览'; document.getElementById('m-pwd').value = ''; document.getElementById('lock-modal').classList.add('active'); }
           else { showPreview(id); }
         };
 
         window.onDownload = function(id) {
           activeId = id;
-          if(locks[id]) { action = 'check_d'; document.getElementById('m-title').innerText = '文件已红锁保护，请输入密码下载'; document.getElementById('m-pwd').value = ''; document.getElementById('lock-modal').classList.add('active'); }
+          if(locks[id]) { action = 'check_d'; document.getElementById('m-title').innerText = '🔒 文件已受红锁保护，请输入密码下载'; document.getElementById('m-pwd').value = ''; document.getElementById('lock-modal').classList.add('active'); }
           else { alert('安全验证成功，正在拉取文件下载内核...'); }
+        };
+
+        window.onDelete = function(id) {
+          let f = files.find(item => item.id === id);
+          if (confirm(`确定要彻底删除文件【${f.name}】吗？`)) {
+            files = files.filter(item => item.id !== id);
+            if(locks[id]) delete locks[id];
+            localStorage.setItem('hd_locks', JSON.stringify(locks));
+            alert('文件删除成功！');
+            drawList();
+          }
         };
 
         function showPreview(id) {
@@ -157,8 +168,8 @@
         }
 
         document.getElementById('m-ok').addEventListener('click', () => {
-          let p = document.getElementById('m-pwd').value; if(!p) return alert('不能留空');
-          if(action === 'lock') { locks[activeId] = p; alert('加锁成功，图标已变红'); }
+          let p = document.getElementById('m-pwd').value; if(!p) return alert('密码不能为空');
+          if(action === 'lock') { locks[activeId] = p; alert('加密成功！状态已更改为红点 🔴 拦截模式'); }
           else if(action === 'unlock') { if(locks[activeId]===p) { delete locks[activeId]; alert('文件已全面解锁'); } else return alert('密码错误'); }
           else if(action === 'check_v') { if(locks[activeId]===p) showPreview(activeId); else return alert('密码错误'); }
           else if(action === 'check_d') { if(locks[activeId]===p) alert('授权成功，开始执行文件下载任务'); else return alert('密码错误'); }
