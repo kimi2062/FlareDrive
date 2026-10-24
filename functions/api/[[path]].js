@@ -124,7 +124,7 @@ export async function onRequest(context) {
     }
 
     await env.BUCKET.put(fileId, file.stream(), {
-      httpMetadata: { contentType: file.type },
+      httpMetadata: { contentType: file.type || "application/octet-stream" },
     });
 
     const fileMeta = {
@@ -133,7 +133,7 @@ export async function onRequest(context) {
       parentId: parentId,
       isFolder: false,
       size: file.size,
-      type: file.type,
+      type: file.type || "application/octet-stream",
       uploadedAt: Date.now(),
       isProtected: false,
     };
@@ -169,6 +169,22 @@ export async function onRequest(context) {
     const headers = new Headers(corsHeaders);
     obj.writeHttpMetadata(headers);
     headers.set("etag", obj.httpEtag);
+    headers.set("Content-Disposition", "inline");
+
+    const currentType = headers.get("Content-Type");
+    if (!currentType || currentType === "application/octet-stream") {
+      const ext = (item.name || "").split(".").pop().toLowerCase();
+      const mimeMap = {
+        jpg: "image/jpeg", jpeg: "image/jpeg", png: "image/png", gif: "image/gif",
+        webp: "image/webp", bmp: "image/bmp", svg: "image/svg+xml",
+        mp4: "video/mp4", webm: "video/webm", ogg: "video/ogg",
+        mp3: "audio/mpeg", wav: "audio/wav", flac: "audio/flac", aac: "audio/aac",
+        pdf: "application/pdf", txt: "text/plain; charset=utf-8",
+        json: "application/json", js: "application/javascript"
+      };
+      if (mimeMap[ext]) headers.set("Content-Type", mimeMap[ext]);
+    }
+
     if (obj.range) {
       headers.set("Content-Range", `bytes ${obj.range.offset}-${obj.range.end}/${obj.size}`);
     }
@@ -186,7 +202,7 @@ export async function onRequest(context) {
 
     if (!item) return new Response("Not Found", { status: 404, headers: corsHeaders });
     if (item.isProtected && !verifyToken(request)) {
-      return new Response(null, { status: 403, headers: corsHeaders });
+      return new Response(JSON.stringify({ error: "LOCKED_FILE" }), { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
     if (request.method === "HEAD") {
@@ -219,7 +235,7 @@ export async function onRequest(context) {
       parentId: parentId || "root",
       isFolder: false,
       size: bytes.length,
-      type: "text/plain",
+      type: "text/plain; charset=utf-8",
       uploadedAt: Date.now(),
       isProtected: false,
     };
@@ -345,3 +361,4 @@ export async function onRequest(context) {
 
   return new Response("Not Found", { status: 404, headers: corsHeaders });
 }
+
