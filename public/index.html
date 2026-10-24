@@ -1,0 +1,2100 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>IKIMI Drive</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+  <style>
+    :root {
+      --font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
+      --accent-color: #0078d4;
+      --accent-hover: #106ebe;
+      --bg-main: #f3f3f3;
+      --bg-card: #ffffff;
+      --bg-subtle: rgba(0, 0, 0, 0.025);
+      --text-main: #202020;
+      --text-secondary: #616161;
+      --border-color: rgba(0, 0, 0, 0.08);
+      --radius: 8px;
+      --control-radius: 4px;
+      --shadow: 0 2px 8px rgba(0, 0, 0, 0.05), 0 0 1px rgba(0, 0, 0, 0.12);
+      --fluent-bezier: cubic-bezier(0.1, 0.9, 0.2, 1);
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg-main: #1c1c1c;
+        --bg-card: #282828;
+        --bg-subtle: rgba(255, 255, 255, 0.04);
+        --text-main: #ffffff;
+        --text-secondary: #adadad;
+        --border-color: rgba(255, 255, 255, 0.08);
+        --accent-color: #60cdff;
+        --accent-hover: #4cc2ff;
+        --shadow: 0 4px 12px rgba(0, 0, 0, 0.3), 0 0 1px rgba(255, 255, 255, 0.1);
+      }
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: var(--font-family);
+      background-color: var(--bg-main);
+      color: var(--text-main);
+      padding: 20px;
+      display: flex;
+      justify-content: center;
+      min-height: 100vh;
+      transition: background-color 0.3s var(--fluent-bezier);
+      overflow-x: hidden;
+    }
+
+    .app-container {
+      width: 100%;
+      max-width: 1180px;
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      min-height: 85vh;
+      position: relative;
+    }
+
+    .command-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 12px;
+      padding: 14px 24px;
+      border-bottom: 1px solid var(--border-color);
+      background: var(--bg-subtle);
+      backdrop-filter: blur(10px);
+    }
+    .brand-area { display: flex; align-items: center; gap: 12px; }
+    .brand-title { font-size: 18px; font-weight: 600; display: flex; align-items: center; gap: 8px; }
+    .auth-badge {
+      font-size: 12px;
+      padding: 3px 10px;
+      border-radius: 999px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      user-select: none;
+      border: 1px solid var(--border-color);
+      background: var(--bg-card);
+      color: var(--text-secondary);
+      transition: all 0.15s ease;
+    }
+    .auth-badge.unlocked {
+      background: rgba(16, 124, 65, 0.12);
+      color: #107c41;
+      border-color: rgba(16, 124, 65, 0.3);
+    }
+    @media (prefers-color-scheme: dark) {
+      .auth-badge.unlocked { color: #54d98c; border-color: rgba(84, 217, 140, 0.3); }
+    }
+
+    .action-group { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+
+    .search-box { position: relative; display: flex; align-items: center; }
+    .search-input {
+      height: 32px;
+      width: 190px;
+      padding: 0 28px 0 10px;
+      border-radius: var(--control-radius);
+      border: 1px solid var(--border-color);
+      background: var(--bg-card);
+      color: var(--text-main);
+      font-family: var(--font-family);
+      font-size: 13px;
+      outline: none;
+      transition: width 0.2s var(--fluent-bezier), border-color 0.15s ease;
+    }
+    .search-input:focus { width: 240px; border-color: var(--accent-color); }
+    .search-clear {
+      position: absolute;
+      right: 8px;
+      cursor: pointer;
+      color: var(--text-secondary);
+      font-size: 12px;
+      display: none;
+    }
+
+    .btn {
+      font-family: var(--font-family);
+      font-size: 13.5px;
+      height: 32px;
+      padding: 0 14px;
+      border-radius: var(--control-radius);
+      border: 1px solid var(--border-color);
+      background: var(--bg-card);
+      color: var(--text-main);
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-weight: 400;
+      white-space: nowrap;
+      transition: background-color 0.15s var(--fluent-bezier), transform 0.08s var(--fluent-bezier);
+    }
+    .btn:hover { background: var(--bg-subtle); }
+    .btn:active { transform: scale(0.97); }
+    .btn-accent { background: var(--accent-color); color: #fff; border-color: transparent; }
+    .btn-accent:hover { background: var(--accent-hover); }
+    @media (prefers-color-scheme: dark) { .btn-accent { color: #000; font-weight: 600; } }
+    .btn-danger { background: #e81123; color: #fff; border: none; }
+    .btn-danger:hover { background: #d00e1f; }
+    @media (prefers-color-scheme: dark) { .btn-danger { background: #ff4343; color: #000; font-weight: 600; } }
+
+    .btn-spinner {
+      width: 14px;
+      height: 14px;
+      border: 2px solid rgba(128, 128, 128, 0.25);
+      border-radius: 50%;
+      display: inline-block;
+      animation: fluentSpin 0.6s linear infinite;
+      vertical-align: middle;
+      flex-shrink: 0;
+    }
+    @keyframes fluentSpin { to { transform: rotate(360deg); } }
+
+    .toast-container {
+      position: fixed;
+      top: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 10005;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      pointer-events: none;
+    }
+    .toast-card {
+      pointer-events: auto;
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      box-shadow: 0 8px 24px rgba(0,0,0,0.18);
+      padding: 10px 18px;
+      border-radius: var(--radius);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 13.5px;
+      min-width: 280px;
+      max-width: 90vw;
+      animation: toastIn 0.22s var(--fluent-bezier) both;
+      transition: all 0.2s ease;
+    }
+    .toast-card.success { border-left: 4px solid #107c41; }
+    .toast-card.error { border-left: 4px solid #e81123; }
+    .toast-card.info { border-left: 4px solid #0078d4; }
+    @keyframes toastIn { from { transform: translateY(-20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+    .batch-command-bar, .clipboard-command-bar {
+      display: none;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 8px;
+      padding: 10px 24px;
+      background: rgba(0, 120, 212, 0.06);
+      border-bottom: 1px solid rgba(0, 120, 212, 0.18);
+      animation: flyoutIn 0.22s var(--fluent-bezier) forwards;
+    }
+    .batch-title, .clipboard-title { font-size: 13.5px; font-weight: 600; color: var(--text-main); }
+    .clipboard-command-bar { background: rgba(16, 124, 65, 0.08); border-bottom: 1px solid rgba(16, 124, 65, 0.25); }
+
+    .toolbar-sub {
+      padding: 12px 24px 4px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .breadcrumbs-container { display: flex; align-items: center; gap: 4px; font-size: 14px; flex-wrap: wrap; }
+    .breadcrumb-item { color: var(--accent-color); cursor: pointer; padding: 2px 6px; border-radius: 4px; transition: background 0.15s ease; }
+    .breadcrumb-item:hover { background: var(--bg-subtle); text-decoration: underline; }
+    .breadcrumb-item.active { color: var(--text-main); font-weight: 600; cursor: default; pointer-events: none; }
+    .breadcrumb-separator { color: var(--text-secondary); padding: 0 2px; font-size: 12px; }
+
+    .content-area { padding: 8px 24px 16px 24px; flex-grow: 1; overflow-x: auto; }
+    .file-table { width: 100%; border-collapse: collapse; text-align: left; table-layout: fixed; min-width: 640px; }
+    .file-table th, .file-table td { padding: 11px 12px; font-size: 13.5px; border-bottom: 1px solid var(--border-color); white-space: nowrap; }
+    .file-table th { font-size: 12.5px; color: var(--text-secondary); font-weight: 600; user-select: none; }
+    .file-table th.sortable { cursor: pointer; transition: color 0.15s ease; }
+    .file-table th.sortable:hover { color: var(--text-main); }
+
+    .col-cb { width: 42px; text-align: center; }
+    .col-name { width: auto; }
+    .col-size { width: 115px; }
+    .col-time { width: 175px; }
+    .col-actions { width: 220px; text-align: right; }
+
+    input[type="checkbox"] {
+      appearance: none;
+      -webkit-appearance: none;
+      width: 16px;
+      height: 16px;
+      border: 1px solid var(--text-secondary);
+      border-radius: 3px;
+      background: transparent;
+      vertical-align: middle;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.12s var(--fluent-bezier);
+    }
+    input[type="checkbox"]:checked { background: var(--accent-color); border-color: var(--accent-color); }
+    input[type="checkbox"]:checked::after { content: "✓"; color: #fff; font-size: 11px; font-weight: bold; }
+    @media (prefers-color-scheme: dark) { input[type="checkbox"]:checked::after { color: #000; } }
+
+    .file-row { transition: background-color 0.15s ease; animation: rowEntrance 0.25s var(--fluent-bezier) both; }
+    .file-row:hover { background-color: var(--bg-subtle); }
+    .file-row.selected { background-color: rgba(0, 120, 212, 0.06); }
+    @media (prefers-color-scheme: dark) { .file-row.selected { background-color: rgba(96, 205, 255, 0.08); } }
+
+    .file-name-container { display: flex; align-items: center; gap: 10px; overflow: hidden; }
+    .file-icon { width: 20px; height: 20px; flex-shrink: 0; transition: transform 0.18s var(--fluent-bezier); }
+    .file-row:hover .file-icon { transform: scale(1.08); }
+    .file-name-text { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .file-link { cursor: pointer; transition: color 0.15s ease; }
+    .file-link:hover { color: var(--accent-color); text-decoration: underline; }
+    .folder-link { color: var(--accent-color); cursor: pointer; font-weight: 600; }
+    .folder-link:hover { text-decoration: underline; color: var(--accent-hover); }
+    .lock-tag {
+      font-size: 11px;
+      padding: 1px 6px;
+      border-radius: 3px;
+      background: rgba(232, 17, 35, 0.1);
+      color: #e81123;
+      border: 1px solid rgba(232, 17, 35, 0.25);
+      flex-shrink: 0;
+    }
+    @media (prefers-color-scheme: dark) { .lock-tag { color: #ff7373; } }
+
+    .actions-cell { display: flex; gap: 4px; justify-content: flex-end; align-items: center; }
+    .btn-icon {
+      background: transparent;
+      border: none;
+      cursor: pointer;
+      padding: 6px;
+      border-radius: var(--control-radius);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      transition: background-color 0.15s ease, transform 0.08s ease;
+    }
+    .btn-icon:hover { background: rgba(128, 128, 128, 0.12); }
+    .btn-icon:active { transform: scale(0.9); }
+    .btn-icon svg { width: 16px; height: 16px; fill: var(--text-secondary); transition: fill 0.15s ease; }
+    .btn-icon:hover svg { fill: var(--text-main); }
+    .btn-icon.active-lock svg { fill: #e81123 !important; }
+
+    .status-footer {
+      padding: 10px 24px;
+      border-top: 1px solid var(--border-color);
+      font-size: 12.5px;
+      color: var(--text-secondary);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: var(--bg-subtle);
+    }
+
+    .progress-container {
+      margin: 10px 24px 0 24px;
+      background: var(--bg-subtle);
+      border: 1px solid var(--border-color);
+      padding: 10px 16px;
+      border-radius: var(--control-radius);
+      display: none;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .progress-text { font-size: 12.5px; display: flex; justify-content: space-between; gap: 10px; }
+    .progress-bar-bg { width: 100%; height: 4px; background: rgba(128, 128, 128, 0.2); border-radius: 2px; overflow: hidden; }
+    .progress-bar-fill { width: 0%; height: 100%; background: var(--accent-color); transition: width 0.2s ease; }
+
+    .dropzone-overlay {
+      position: absolute;
+      inset: 8px;
+      border: 2px dashed var(--accent-color);
+      border-radius: var(--radius);
+      background: rgba(0, 120, 212, 0.08);
+      backdrop-filter: blur(4px);
+      z-index: 50;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      gap: 10px;
+      pointer-events: none;
+    }
+    .dropzone-overlay.active { display: flex; }
+    .dropzone-title { font-size: 18px; font-weight: 600; color: var(--accent-color); }
+
+    .dialog-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.25);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      backdrop-filter: blur(0px);
+      z-index: 9999;
+      padding: 16px;
+      transition: backdrop-filter 0.25s ease, background-color 0.25s ease;
+    }
+    .dialog-overlay.fade-in { backdrop-filter: blur(16px); background-color: rgba(0,0,0,0.4); }
+
+    .dialog {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      box-shadow: 0 12px 40px rgba(0,0,0,0.25);
+      border-radius: var(--radius);
+      width: 100%;
+      max-width: 420px;
+      padding: 22px 24px;
+      opacity: 0;
+      transform: scale(0.92) translateY(10px);
+      transition: transform 0.25s var(--fluent-bezier), opacity 0.25s var(--fluent-bezier);
+    }
+    .dialog.show { opacity: 1; transform: scale(1) translateY(0); }
+    .dialog-title { font-size: 16px; font-weight: 600; margin-bottom: 14px; }
+    .dialog-desc { font-size: 13.5px; color: var(--text-secondary); margin-bottom: 18px; line-height: 1.5; }
+    .dialog-footer { display: flex; justify-content: flex-end; gap: 8px; }
+
+    .dialog-input {
+      width: 100%;
+      height: 36px;
+      padding: 0 12px;
+      border-radius: var(--control-radius);
+      font-family: var(--font-family);
+      font-size: 14px;
+      margin-bottom: 18px;
+      outline: none;
+      color: var(--text-main);
+      background: var(--bg-main);
+      border: 1px solid var(--border-color);
+      border-bottom: 2px solid var(--text-secondary);
+      transition: border-color 0.15s ease, background-color 0.15s ease;
+    }
+    .dialog-input:focus { background: var(--bg-card); border-bottom-color: var(--accent-color); }
+
+    .preview-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      box-shadow: 0 16px 48px rgba(0,0,0,0.3);
+      border-radius: var(--radius);
+      padding: 14px 16px;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      width: 820px;
+      max-width: 95vw;
+      max-height: 90vh;
+      opacity: 0;
+      transform: scale(0.92);
+      transition: transform 0.25s var(--fluent-bezier), opacity 0.25s var(--fluent-bezier), width 0.25s ease;
+    }
+    .preview-card.show { opacity: 1; transform: scale(1); }
+    .preview-card.large-layout { width: 980px; }
+    .preview-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid var(--border-color);
+      margin-bottom: 10px;
+    }
+    .preview-header { font-size: 14px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .preview-controls { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+    .preview-body-content {
+      width: 100%;
+      flex-grow: 1;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      background: var(--bg-subtle);
+      border-radius: var(--control-radius);
+      overflow: auto;
+      padding: 12px;
+      min-height: 280px;
+    }
+    .preview-body-content img { max-width: 100%; max-height: 74vh; object-fit: contain; border-radius: 4px; }
+    .preview-body-content video { width: 100%; max-height: 74vh; outline: none; background: #000; border-radius: 4px; }
+    .preview-body-content audio { width: 100%; max-width: 540px; outline: none; }
+    .preview-body-content iframe { width: 100%; height: 75vh; border: none; border-radius: 4px; background: #fff; }
+
+    .editor-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      box-shadow: 0 16px 48px rgba(0,0,0,0.3);
+      border-radius: var(--radius);
+      padding: 20px 24px;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      width: 900px;
+      max-width: 95vw;
+      height: 85vh;
+      opacity: 0;
+      transform: scale(0.92) translateY(10px);
+      transition: transform 0.25s var(--fluent-bezier), opacity 0.25s var(--fluent-bezier);
+    }
+    .editor-card.show { opacity: 1; transform: scale(1) translateY(0); }
+    .editor-top-bar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; gap: 12px; }
+    .editor-meta { font-size: 12px; color: var(--text-secondary); }
+    .editor-textarea {
+      width: 100%;
+      flex-grow: 1;
+      padding: 14px;
+      border-radius: var(--control-radius);
+      border: 1px solid var(--border-color);
+      background: var(--bg-main);
+      color: var(--text-main);
+      font-family: 'Consolas', 'SFMono-Regular', 'Courier New', monospace;
+      font-size: 13.5px;
+      resize: none;
+      outline: none;
+      margin-bottom: 14px;
+      line-height: 1.55;
+      tab-size: 2;
+    }
+    .editor-textarea:focus { border-color: var(--accent-color); }
+
+    @keyframes rowEntrance { from { transform: translateY(6px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+    @keyframes flyoutIn { from { transform: translateY(-10px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+  </style>
+</head>
+<body>
+
+  <div class="toast-container" id="toastContainer"></div>
+
+  <div class="app-container" id="appContainer">
+    <div class="dropzone-overlay" id="dropzoneOverlay">
+      <svg style="width:48px;height:48px;fill:var(--accent-color)" viewBox="0 0 24 24"><path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM14 13v4h-4v-4H7l5-5 5 5h-3z"></path></svg>
+      <div class="dropzone-title">释放鼠标以立即上传文件或文件夹到当前目录</div>
+    </div>
+
+    <div class="command-bar">
+      <div class="brand-area">
+        <div class="brand-title">
+          <svg style="width:22px;height:22px;fill:var(--accent-color)" viewBox="0 0 24 24"><path d="M10 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2h-8l-2-2z"></path></svg>
+          IKIMI Drive
+        </div>
+        <div class="auth-badge" id="authBadge" onclick="window.handleAuthBadgeClick()" title="点击验证密码或退出加密会话">
+          <span id="authBadgeText">🔒 未解锁</span>
+        </div>
+      </div>
+
+      <div class="action-group">
+        <div class="search-box">
+          <input type="text" class="search-input" id="searchInput" placeholder="搜索当前目录..." oninput="window.handleSearchInput(this)">
+          <span class="search-clear" id="searchClearBtn" onclick="window.clearSearch()">✕</span>
+        </div>
+        <button class="btn" onclick="window.fetchFiles()" title="刷新目录">刷新</button>
+        <button class="btn" onclick="window.openEditorDialogForCreate()">新建文本</button>
+        <button class="btn" onclick="window.openFolderDialog()">新建文件夹</button>
+        <button class="btn btn-accent" onclick="window.triggerFileUpload()">上传文件</button>
+        <button class="btn" onclick="window.triggerFolderUpload()">上传文件夹</button>
+
+        <input type="file" id="fileInput" style="display:none" multiple>
+        <input type="file" id="folderInput" style="display:none" webkitdirectory>
+      </div>
+    </div>
+
+    <div class="batch-command-bar" id="batchBar">
+      <div class="batch-title" id="batchCountText">已选中 0 个项目</div>
+      <div class="action-group">
+        <button class="btn" onclick="window.executeBatchProtectToggle(true)">批量加密</button>
+        <button class="btn" onclick="window.executeBatchProtectToggle(false)">批量解锁</button>
+        <button class="btn" onclick="window.triggerBatchClipboard('move')">剪切移动</button>
+        <button class="btn" onclick="window.triggerBatchClipboard('copy')">复制</button>
+        <button class="btn btn-accent" onclick="window.executeBatchPackagedDownload()">打包下载</button>
+        <button class="btn btn-danger" onclick="window.executeBatchDelete(this)">批量删除</button>
+      </div>
+    </div>
+
+    <div class="clipboard-command-bar" id="clipboardBar">
+      <div class="clipboard-title" id="clipboardCountText">已暂存 0 个项目</div>
+      <div class="action-group">
+        <button class="btn btn-accent" onclick="window.executeClipboardPaste(this)">粘贴到当前目录</button>
+        <button class="btn" onclick="window.clearClipboardState()">取消</button>
+      </div>
+    </div>
+
+    <div class="toolbar-sub">
+      <div class="breadcrumbs-container" id="breadcrumbs"><span class="breadcrumb-item active">根目录</span></div>
+    </div>
+
+    <div class="progress-container" id="progressContainer">
+      <div class="progress-text">
+        <span id="progressFileName" style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">准备传输...</span>
+        <span id="progressPercent">0%</span>
+      </div>
+      <div class="progress-bar-bg"><div class="progress-bar-fill" id="progressBarFill"></div></div>
+    </div>
+
+    <div class="content-area">
+      <table class="file-table">
+        <thead>
+          <tr>
+            <th class="col-cb"><input type="checkbox" id="selectAllCb" onclick="window.toggleSelectAll(this)"></th>
+            <th class="col-name sortable" onclick="window.changeSort('name')">名称 <span id="sortIndicator-name"></span></th>
+            <th class="col-size sortable" onclick="window.changeSort('size')">大小 <span id="sortIndicator-size"></span></th>
+            <th class="col-time sortable" onclick="window.changeSort('time')">修改/上传时间 <span id="sortIndicator-time">↓</span></th>
+            <th class="col-actions">操作</th>
+          </tr>
+        </thead>
+        <tbody id="fileListBody">
+          <tr><td colspan="5" style="text-align:center;color:var(--text-secondary);padding:30px;">正在加载目录中...</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="status-footer">
+      <span id="statusSummary">共 0 个文件夹，0 个文件 · 总大小 0 B</span>
+      <span>支持拖拽文件/文件夹直传 · Esc 关闭弹窗 · 支持各类办公文档、音视频在线完整预览与真实下载</span>
+    </div>
+  </div>
+
+  <!-- 新建文件夹弹窗 -->
+  <div class="dialog-overlay" id="folderOverlay">
+    <div class="dialog" id="folderDialog">
+      <div class="dialog-title">新建文件夹</div>
+      <input type="text" class="dialog-input" id="folderNameInput" placeholder="请输入文件夹名称" onkeydown="if(event.key==='Enter')document.getElementById('confirmFolderBtn').click()">
+      <div class="dialog-footer">
+        <button class="btn" onclick="window.closeFolderDialog()">取消</button>
+        <button class="btn btn-accent" id="confirmFolderBtn">确认创建</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 重命名弹窗 -->
+  <div class="dialog-overlay" id="renameOverlay">
+    <div class="dialog" id="renameDialog">
+      <div class="dialog-title">重命名项目</div>
+      <input type="text" class="dialog-input" id="newNameInput" onkeydown="if(event.key==='Enter')document.getElementById('confirmRenameBtn').click()">
+      <div class="dialog-footer">
+        <button class="btn" onclick="window.closeRenameDialog()">取消</button>
+        <button class="btn btn-accent" id="confirmRenameBtn">保存修改</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 确认操作弹窗 -->
+  <div class="dialog-overlay" id="confirmOverlay">
+    <div class="dialog" id="confirmDialog">
+      <div class="dialog-title" id="confirmDialogTitle">确认操作</div>
+      <div class="dialog-desc" id="confirmDialogDesc">确定要继续吗？</div>
+      <div class="dialog-footer">
+        <button class="btn" onclick="window.closeConfirmDialog()">取消</button>
+        <button class="btn btn-danger" id="confirmDialogOkBtn">确认执行</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 多媒体与文档全能在线预览弹窗 -->
+  <div class="dialog-overlay" id="previewOverlay" onclick="window.closePreviewDialog()">
+    <div class="preview-card" id="previewCard" onclick="event.stopPropagation()">
+      <div class="preview-top">
+        <div class="preview-header" id="previewHeaderTitle">查看文件</div>
+        <div class="preview-controls">
+          <button class="btn" id="prevMediaBtn" onclick="window.navigatePreview(-1)">◀ 上一个</button>
+          <button class="btn" id="nextMediaBtn" onclick="window.navigatePreview(1)">下一个 ▶</button>
+          <button class="btn" id="previewDownloadBtn">下载到本地</button>
+          <button class="btn" onclick="window.closePreviewDialog()">✕ 关闭</button>
+        </div>
+      </div>
+      <div class="preview-body-content" id="previewBodyContent"></div>
+    </div>
+  </div>
+
+  <!-- 文本代码编辑器弹窗 -->
+  <div class="dialog-overlay" id="editorOverlay">
+    <div class="editor-card" id="editorCard">
+      <div class="editor-top-bar">
+        <div class="dialog-title" id="editorDialogTitle" style="margin-bottom:0;">在线文本编辑器</div>
+        <div class="editor-meta" id="editorStatsText">0 行 · 0 字符</div>
+      </div>
+      <input type="text" class="dialog-input" id="editorFileNameInput" placeholder="请输入文件名（如 notes.txt 或 run.bat）" style="margin-bottom:12px;">
+      <textarea class="editor-textarea" id="editorTextarea" placeholder="在这里编写内容... (支持 Tab 缩进与 Ctrl+S 快捷保存)"></textarea>
+      <div class="dialog-footer">
+        <button class="btn" onclick="window.closeEditorDialog()">取消</button>
+        <button class="btn btn-accent" id="confirmEditorSaveBtn">保存并同步 (Ctrl+S)</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 安全验证密码弹窗 -->
+  <div class="dialog-overlay" id="authOverlay">
+    <div class="dialog" id="authDialog">
+      <div class="dialog-title" style="display:flex; align-items:center; gap:8px;">
+        <svg style="width:20px;height:20px;fill:var(--accent-color)" viewBox="0 0 24 24"><path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zM9 6c0-1.66 1.34-3 3-3s3 1.34 3 3v2H9V6z"></path></svg>
+        安全身份验证
+      </div>
+      <div class="dialog-desc">目标资源或操作受密码保护，请输入系统管理密钥解锁当前会话。</div>
+      <input type="password" class="dialog-input" id="authPasswordInput" placeholder="请输入系统管理密钥" onkeydown="if(event.key==='Enter')document.getElementById('confirmAuthBtn').click()">
+      <div class="dialog-footer">
+        <button class="btn" onclick="window.closeAuthDialog()">取消</button>
+        <button class="btn btn-accent" id="confirmAuthBtn">验证解锁</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    window.currentFolderId = 'root';
+    window.folderHistory = [{ id: 'root', name: '根目录' }];
+    window.currentRenameId = null;
+    window.clipboardIds = [];
+    window.clipboardAction = null;
+    window.currentEditingTextId = null;
+    window.currentItems = [];
+    window.searchKeyword = '';
+    window.sortField = 'time';
+    window.sortAsc = false;
+    window.currentPreviewId = null;
+    window.sessionToken = sessionStorage.getItem('ikimi_drive_token') || '';
+    window.authCancelCallback = null;
+
+    var TEXT_EXTS = [
+      'txt','md','markdown','json','js','mjs','ts','tsx','jsx','py','cpp','c','h','hpp',
+      'java','go','rs','php','rb','sh','bat','ps1','sql','yaml','yml','toml','ini','conf',
+      'env','log','csv','xml','html','htm','css','vue','svelte','gitignore','dockerfile'
+    ];
+
+    var OFFICE_EXTS = ['doc','docx','xls','xlsx','ppt','pptx'];
+
+    function getFileExt(name) {
+      if (!name) return '';
+      var idx = name.lastIndexOf('.');
+      return idx !== -1 ? name.slice(idx + 1).toLowerCase() : '';
+    }
+
+    function checkIsTextFile(name, mime) {
+      var ext = getFileExt(name);
+      if (TEXT_EXTS.indexOf(ext) !== -1) return true;
+      if (mime && (mime.indexOf('text/') === 0 || mime.indexOf('application/json') === 0 || mime.indexOf('application/javascript') === 0 || mime.indexOf('application/xml') === 0)) {
+        return true;
+      }
+      return false;
+    }
+
+    function checkIsOfficeFile(name) {
+      return OFFICE_EXTS.indexOf(getFileExt(name)) !== -1;
+    }
+
+    window.setSessionToken = function(token) {
+      window.sessionToken = token || '';
+      if (token) sessionStorage.setItem('ikimi_drive_token', token);
+      else sessionStorage.removeItem('ikimi_drive_token');
+      window.updateAuthBadgeUI();
+    };
+
+    window.updateAuthBadgeUI = function() {
+      var badge = document.getElementById('authBadge');
+      var text = document.getElementById('authBadgeText');
+      if (!badge || !text) return;
+      if (window.sessionToken) {
+        badge.classList.add('unlocked');
+        text.innerText = '🔓 已认证 (点击锁定)';
+      } else {
+        badge.classList.remove('unlocked');
+        text.innerText = '🔒 未解锁';
+      }
+    };
+
+    window.handleAuthBadgeClick = function() {
+      if (window.sessionToken) {
+        window.setSessionToken('');
+        window.showToast('安全会话已手动锁定', 'info');
+        window.fetchFiles();
+      } else {
+        window.promptPassword(function() { window.fetchFiles(); });
+      }
+    };
+
+    window.triggerFileUpload = function() {
+      var input = document.getElementById('fileInput');
+      if (input) input.click();
+    };
+
+    window.triggerFolderUpload = function() {
+      var input = document.getElementById('folderInput');
+      if (input) input.click();
+    };
+
+    window.closeFolderDialog = function() { hideModal('folderOverlay', 'folderDialog'); };
+    window.closeRenameDialog = function() { hideModal('renameOverlay', 'renameDialog'); };
+    window.closeConfirmDialog = function() { hideModal('confirmOverlay', 'confirmDialog'); };
+    window.closePreviewDialog = function() {
+      window.currentPreviewId = null;
+      var card = document.getElementById('previewCard');
+      var overlay = document.getElementById('previewOverlay');
+      if (card) card.classList.remove('show');
+      if (overlay) overlay.classList.remove('fade-in');
+      setTimeout(function() {
+        if (overlay) overlay.style.display = 'none';
+        var body = document.getElementById('previewBodyContent');
+        if (body) body.innerHTML = '';
+      }, 220);
+    };
+    window.closeEditorDialog = function() {
+      window.currentEditingTextId = null;
+      hideModal('editorOverlay', 'editorCard');
+      document.getElementById('editorTextarea').value = '';
+    };
+    window.closeAuthDialog = function() {
+      hideModal('authOverlay', 'authDialog');
+      if (window.authCancelCallback) {
+        var cb = window.authCancelCallback;
+        window.authCancelCallback = null;
+        cb();
+      }
+    };
+
+    window.showToast = function(message, type) {
+      type = type || 'info';
+      var container = document.getElementById('toastContainer');
+      if (!container) return;
+      var toast = document.createElement('div');
+      toast.className = 'toast-card ' + type;
+      var iconSpan = document.createElement('span');
+      iconSpan.textContent = type === 'success' ? '✓' : (type === 'error' ? '✕' : 'ℹ️');
+      var msgSpan = document.createElement('span');
+      msgSpan.style.flexGrow = '1';
+      msgSpan.textContent = String(message || '');
+      toast.appendChild(iconSpan);
+      toast.appendChild(msgSpan);
+      container.appendChild(toast);
+      setTimeout(function() {
+        toast.style.opacity = '0';
+        toast.style.transform = 'translateY(-12px)';
+        setTimeout(function() { toast.remove(); }, 200);
+      }, 3200);
+    };
+
+    window.openConfirmModal = function(title, desc, onConfirm) {
+      document.getElementById('confirmDialogTitle').textContent = title || '确认操作';
+      document.getElementById('confirmDialogDesc').textContent = desc || '确定要继续吗？';
+      showModal('confirmOverlay', 'confirmDialog');
+      var okBtn = document.getElementById('confirmDialogOkBtn');
+      okBtn.onclick = async function(e) {
+        await window.wrapLoading(e.currentTarget, async function() {
+          await onConfirm();
+          window.closeConfirmDialog();
+        });
+      };
+    };
+
+    window.wrapLoading = async function(btnElement, asyncFunc) {
+      if (!btnElement || btnElement.disabled) return;
+      var originalHtml = btnElement.innerHTML;
+      btnElement.disabled = true;
+      var spinnerColor = (btnElement.classList.contains('btn-accent') || btnElement.classList.contains('btn-danger')) ? 'currentColor' : 'var(--text-main)';
+      btnElement.innerHTML = '<span class="btn-spinner" style="border-top-color: ' + spinnerColor + '"></span> ' + originalHtml;
+      try {
+        await asyncFunc();
+      } finally {
+        btnElement.innerHTML = originalHtml;
+        btnElement.disabled = false;
+      }
+    };
+
+    window.promptPassword = function(callback, onCancelled) {
+      var input = document.getElementById('authPasswordInput');
+      input.value = '';
+      window.authCancelCallback = onCancelled || null;
+      showModal('authOverlay', 'authDialog');
+      setTimeout(function() { input.focus(); }, 60);
+
+      document.getElementById('confirmAuthBtn').onclick = async function(e) {
+        var password = input.value;
+        if (!password) {
+          window.showToast('请输入管理密码', 'error');
+          return;
+        }
+        await window.wrapLoading(e.currentTarget, async function() {
+          var res = await fetch('/api/auth/verify', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ password: password })
+          });
+          if (res.ok) {
+            var data = await res.json();
+            window.setSessionToken(data.token);
+            window.authCancelCallback = null;
+            hideModal('authOverlay', 'authDialog');
+            window.showToast('安全身份认证成功！', 'success');
+            if (callback) callback();
+          } else {
+            window.showToast('访问密码校验错误，请重新输入', 'error');
+          }
+        });
+      };
+    };
+
+    function updateEditorStats() {
+      var val = document.getElementById('editorTextarea').value || '';
+      var lines = val ? val.split('\n').length : 1;
+      document.getElementById('editorStatsText').textContent = lines + ' 行 · ' + val.length + ' 字符';
+    }
+
+    window.openEditorDialogForCreate = function() {
+      window.currentEditingTextId = null;
+      document.getElementById('editorDialogTitle').innerText = '新建纯文本 / 代码脚本';
+      var nameInput = document.getElementById('editorFileNameInput');
+      nameInput.disabled = false;
+      nameInput.value = '';
+      var textarea = document.getElementById('editorTextarea');
+      textarea.value = '';
+      updateEditorStats();
+      showModal('editorOverlay', 'editorCard');
+      setTimeout(function() { nameInput.focus(); }, 60);
+
+      document.getElementById('confirmEditorSaveBtn').onclick = async function(e) {
+        var name = nameInput.value.trim();
+        if (!name) {
+          window.showToast('请输入文件名！', 'error');
+          return;
+        }
+        var content = textarea.value;
+        await window.wrapLoading(e.currentTarget, async function() {
+          var res = await fetch('/api/text/create', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'X-Auth-Token': window.sessionToken
+            },
+            body: JSON.stringify({ name: name, parentId: window.currentFolderId, content: content })
+          });
+          if (res.status === 403) {
+            window.setSessionToken('');
+            window.promptPassword(function() { document.getElementById('confirmEditorSaveBtn').click(); });
+            return;
+          }
+          if (res.ok) {
+            var data = await res.json();
+            window.closeEditorDialog();
+            window.showToast('文件创建并保存成功！', 'success');
+            if (data.file && data.file.parentId === window.currentFolderId) {
+              window.currentItems.unshift(data.file);
+              window.renderFilteredItems();
+            }
+          } else {
+            window.showToast('新建文本失败', 'error');
+          }
+        });
+      };
+    };
+
+    window.openEditorDialogForEdit = async function(id, filename) {
+      try {
+        var headers = {};
+        if (window.sessionToken) headers['X-Auth-Token'] = window.sessionToken;
+        var res = await fetch('/api/view?id=' + encodeURIComponent(id), { headers: headers });
+        if (res.status === 403) {
+          window.setSessionToken('');
+          window.promptPassword(function() { window.openEditorDialogForEdit(id, filename); });
+          return;
+        }
+        if (!res.ok) {
+          window.showToast('读取文件内容失败', 'error');
+          return;
+        }
+        var content = await res.text();
+        window.currentEditingTextId = id;
+        document.getElementById('editorDialogTitle').innerText = '编辑文件: ' + filename;
+        var nameInput = document.getElementById('editorFileNameInput');
+        nameInput.disabled = false;
+        nameInput.value = filename;
+        var textarea = document.getElementById('editorTextarea');
+        textarea.value = content;
+        updateEditorStats();
+        showModal('editorOverlay', 'editorCard');
+        setTimeout(function() { textarea.focus(); }, 60);
+
+        document.getElementById('confirmEditorSaveBtn').onclick = async function(e) {
+          var updatedName = nameInput.value.trim() || filename;
+          var updatedContent = textarea.value;
+          await window.wrapLoading(e.currentTarget, async function() {
+            var saveRes = await fetch('/api/text/save', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'X-Auth-Token': window.sessionToken
+              },
+              body: JSON.stringify({ id: id, name: updatedName, content: updatedContent })
+            });
+            if (saveRes.status === 403) {
+              window.setSessionToken('');
+              window.promptPassword(function() { document.getElementById('confirmEditorSaveBtn').click(); });
+              return;
+            }
+            if (saveRes.ok) {
+              var saveData = await saveRes.json();
+              window.closeEditorDialog();
+              window.showToast('文件保存并同步完成！', 'success');
+              if (saveData.file) {
+                var idx = window.currentItems.findIndex(function(item) { return item.id === id; });
+                if (idx !== -1) window.currentItems[idx] = saveData.file;
+                window.renderFilteredItems();
+              } else {
+                window.fetchFiles();
+              }
+            } else {
+              window.showToast('保存文件失败', 'error');
+            }
+          });
+        };
+      } catch (err) {
+        window.showToast('加载文件异常: ' + err.message, 'error');
+      }
+    };
+
+    window.openFolderDialog = function() {
+      var input = document.getElementById('folderNameInput');
+      input.value = '';
+      showModal('folderOverlay', 'folderDialog');
+      setTimeout(function() { input.focus(); }, 60);
+
+      document.getElementById('confirmFolderBtn').onclick = async function(e) {
+        var name = input.value.trim();
+        if (!name) {
+          window.showToast('请输入文件夹名称', 'error');
+          return;
+        }
+        await window.wrapLoading(e.currentTarget, async function() {
+          var res = await fetch('/api/folder/create', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'X-Auth-Token': window.sessionToken
+            },
+            body: JSON.stringify({ name: name, parentId: window.currentFolderId })
+          });
+          if (res.status === 403) {
+            window.setSessionToken('');
+            window.closeFolderDialog();
+            window.promptPassword(function() { window.openFolderDialog(); });
+            return;
+          }
+          if (res.ok) {
+            var data = await res.json();
+            window.closeFolderDialog();
+            window.showToast('文件夹创建成功！', 'success');
+            if (data.folder && data.folder.parentId === window.currentFolderId) {
+              window.currentItems.unshift(data.folder);
+              window.renderFilteredItems();
+            }
+          } else {
+            window.showToast('创建文件夹失败', 'error');
+          }
+        });
+      };
+    };
+
+    window.handleSearchInput = function(input) {
+      window.searchKeyword = (input.value || '').trim().toLowerCase();
+      var clearBtn = document.getElementById('searchClearBtn');
+      if (clearBtn) clearBtn.style.display = window.searchKeyword ? 'inline' : 'none';
+      window.renderFilteredItems();
+    };
+
+    window.clearSearch = function() {
+      var input = document.getElementById('searchInput');
+      if (input) input.value = '';
+      window.searchKeyword = '';
+      var clearBtn = document.getElementById('searchClearBtn');
+      if (clearBtn) clearBtn.style.display = 'none';
+      window.renderFilteredItems();
+    };
+
+    window.changeSort = function(field) {
+      if (window.sortField === field) {
+        window.sortAsc = !window.sortAsc;
+      } else {
+        window.sortField = field;
+        window.sortAsc = field === 'name';
+      }
+      ['name', 'size', 'time'].forEach(function(col) {
+        var el = document.getElementById('sortIndicator-' + col);
+        if (!el) return;
+        el.textContent = (col === window.sortField) ? (window.sortAsc ? '↑' : '↓') : '';
+      });
+      window.renderFilteredItems();
+    };
+
+    window.toggleSelectAll = function(master) {
+      var checkboxes = document.querySelectorAll('.item-cb');
+      checkboxes.forEach(function(cb) {
+        cb.checked = master.checked;
+        var row = document.getElementById('row-' + cb.getAttribute('data-id'));
+        if (row) {
+          if (master.checked) row.classList.add('selected');
+          else row.classList.remove('selected');
+        }
+      });
+      window.updateBatchBar();
+    };
+
+    window.handleItemSelect = function(e, cb) {
+      e.stopPropagation();
+      var row = document.getElementById('row-' + cb.getAttribute('data-id'));
+      if (row) {
+        if (cb.checked) row.classList.add('selected');
+        else row.classList.remove('selected');
+      }
+      var total = document.querySelectorAll('.item-cb').length;
+      var checked = document.querySelectorAll('.item-cb:checked').length;
+      var selectAllCb = document.getElementById('selectAllCb');
+      if (selectAllCb) selectAllCb.checked = (total === checked && total > 0);
+      window.updateBatchBar();
+    };
+
+    window.updateBatchBar = function() {
+      var checkedBoxes = document.querySelectorAll('.item-cb:checked');
+      var batchBar = document.getElementById('batchBar');
+      var countText = document.getElementById('batchCountText');
+      if (checkedBoxes.length > 0) {
+        countText.innerText = '已选中 ' + checkedBoxes.length + ' 个项目';
+        batchBar.style.display = 'flex';
+      } else {
+        batchBar.style.display = 'none';
+      }
+    };
+
+    window.executeBatchProtectToggle = function(shouldProtect) {
+      var checkedBoxes = document.querySelectorAll('.item-cb:checked');
+      if (checkedBoxes.length === 0) return;
+      var ids = Array.from(checkedBoxes).map(function(cb) { return cb.getAttribute('data-id'); });
+      window.executeProtectApi(ids, shouldProtect);
+    };
+
+    window.toggleSingleProtect = function(itemId, shouldProtect) {
+      window.executeProtectApi([itemId], shouldProtect);
+    };
+
+    window.executeProtectApi = async function(ids, shouldProtect) {
+      var res = await fetch('/api/auth/protect', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Auth-Token': window.sessionToken
+        },
+        body: JSON.stringify({ ids: ids, protect: shouldProtect })
+      });
+      if (res.status === 403) {
+        window.setSessionToken('');
+        window.promptPassword(function() { window.executeProtectApi(ids, shouldProtect); });
+        return;
+      }
+      if (res.ok) {
+        window.showToast(shouldProtect ? '已开启密码保护' : '已解除密码保护', 'success');
+        window.fetchFiles();
+      } else {
+        window.showToast('修改保护状态失败', 'error');
+      }
+    };
+
+    window.triggerBatchClipboard = function(action) {
+      var checkedBoxes = document.querySelectorAll('.item-cb:checked');
+      if (checkedBoxes.length === 0) return;
+      window.clipboardIds = Array.from(checkedBoxes).map(function(cb) { return cb.getAttribute('data-id'); });
+      window.clipboardAction = action;
+      document.getElementById('clipboardCountText').innerText =
+        '已暂存 ' + window.clipboardIds.length + ' 个项目，进入目标文件夹后点击粘贴即可完成' + (action === 'move' ? '移动' : '复制');
+      document.getElementById('clipboardBar').style.display = 'flex';
+      var selectAllCb = document.getElementById('selectAllCb');
+      if (selectAllCb) {
+        selectAllCb.checked = false;
+        window.toggleSelectAll(selectAllCb);
+      }
+    };
+
+    window.clearClipboardState = function() {
+      window.clipboardIds = [];
+      window.clipboardAction = null;
+      document.getElementById('clipboardBar').style.display = 'none';
+    };
+
+    window.executeClipboardPaste = async function(btnElement) {
+      if (window.clipboardIds.length === 0 || !window.clipboardAction) return;
+      var container = document.getElementById('progressContainer');
+      var bar = document.getElementById('progressBarFill');
+      var percentText = document.getElementById('progressPercent');
+      var nameText = document.getElementById('progressFileName');
+      var actionText = window.clipboardAction === 'move' ? '移动' : '复制';
+      var apiUrl = window.clipboardAction === 'move' ? '/api/move' : '/api/copy';
+      var successCount = 0;
+
+      await window.wrapLoading(btnElement, async function() {
+        container.style.display = 'flex';
+        bar.style.width = '0%';
+        percentText.innerText = '0%';
+        for (var i = 0; i < window.clipboardIds.length; i++) {
+          var id = window.clipboardIds[i];
+          nameText.innerText = '正在执行批量' + actionText + ' (' + (i + 1) + '/' + window.clipboardIds.length + ')...';
+          try {
+            var headers = { 'Content-Type': 'application/json' };
+            if (window.sessionToken) headers['X-Auth-Token'] = window.sessionToken;
+
+            var res = await fetch(apiUrl, {
+              method: 'POST',
+              headers: headers,
+              body: JSON.stringify({ id: id, targetParentId: window.currentFolderId })
+            });
+            if (res.status === 403) {
+              window.setSessionToken('');
+              container.style.display = 'none';
+              window.promptPassword(function() { window.executeClipboardPaste(btnElement); });
+              return;
+            }
+            if (res.ok) successCount++;
+            else {
+              var errData = await res.json().catch(function() { return {}; });
+              if (errData.error) window.showToast(errData.error, 'error');
+            }
+          } catch (err) {
+            console.error(err);
+          }
+          var percent = Math.round(((i + 1) / window.clipboardIds.length) * 100);
+          bar.style.width = percent + '%';
+          percentText.innerText = percent + '%';
+        }
+        window.showToast('批量' + actionText + '操作完成，成功 ' + successCount + ' 项', 'success');
+        window.clearClipboardState();
+        setTimeout(function() { container.style.display = 'none'; }, 1000);
+        window.fetchFiles();
+      });
+    };
+
+    // 真正下载到本地：创建带真实文件名与流响应的 a 标签触发真实下载
+    window.downloadFile = function(id, filename) {
+      var tokenParam = window.sessionToken ? '&token=' + encodeURIComponent(window.sessionToken) : '';
+      var downloadUrl = '/api/download?id=' + encodeURIComponent(id) + tokenParam;
+
+      fetch(downloadUrl, { method: 'HEAD' })
+        .then(function(res) {
+          if (res.status === 403) {
+            window.setSessionToken('');
+            window.promptPassword(function() { window.downloadFile(id, filename); });
+          } else if (res.ok) {
+            var a = document.createElement('a');
+            a.href = downloadUrl;
+            if (filename) a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+          } else {
+            window.showToast('文件不存在或无法获取下载流', 'error');
+          }
+        })
+        .catch(function() {
+          var a = document.createElement('a');
+          a.href = downloadUrl;
+          if (filename) a.download = filename;
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+        });
+    };
+
+    window.downloadFolder = function(id, name) {
+      window.pipelineZipDownload([{ id: id, name: name, isFolder: true }], name + '.zip');
+    };
+
+    window.executeBatchPackagedDownload = async function() {
+      var checkedBoxes = document.querySelectorAll('.item-cb:checked');
+      if (checkedBoxes.length === 0) return;
+      var selectedItems = Array.from(checkedBoxes).map(function(cb) {
+        return {
+          id: cb.getAttribute('data-id'),
+          name: cb.getAttribute('data-name'),
+          isFolder: cb.getAttribute('data-folder') === 'true'
+        };
+      });
+      var zipName = selectedItems.length === 1
+        ? selectedItems[0].name + '.zip'
+        : 'IKIMI_Archive_' + Date.now().toString().slice(-4) + '.zip';
+      await window.pipelineZipDownload(selectedItems, zipName);
+    };
+
+    window.pipelineZipDownload = async function(targetItems, outputZipName) {
+      var container = document.getElementById('progressContainer');
+      var bar = document.getElementById('progressBarFill');
+      var percentText = document.getElementById('progressPercent');
+      var nameText = document.getElementById('progressFileName');
+      container.style.display = 'flex';
+      bar.style.width = '0%';
+      percentText.innerText = '0%';
+      nameText.innerText = '正在遍历目录结构树...';
+
+      try {
+        var headers = {};
+        if (window.sessionToken) headers['X-Auth-Token'] = window.sessionToken;
+        var allItemsRes = await fetch('/api/all-items', { headers: headers });
+        var allItems = await allItemsRes.json();
+        var filesToDownload = [];
+
+        for (var t = 0; t < targetItems.length; t++) {
+          var target = targetItems[t];
+          if (!target.isFolder) {
+            filesToDownload.push({ id: target.id, name: target.name, zipPath: target.name });
+          } else {
+            var targetMeta = allItems.find(function(i) { return i && i.id === target.id; });
+            var baseParentId = targetMeta ? targetMeta.parentId : window.currentFolderId;
+            var queue = [target.id];
+            var subItems = [];
+            while (queue.length > 0) {
+              var currId = queue.shift();
+              var children = allItems.filter(function(i) { return i && i.parentId === currId; });
+              for (var c = 0; c < children.length; c++) {
+                var child = children[c];
+                subItems.push(child);
+                if (child.isFolder) queue.push(child.id);
+              }
+            }
+            var subFiles = subItems.filter(function(i) { return !i.isFolder; });
+            subFiles.forEach(function(file) {
+              var pathParts = [file.name];
+              var current = file;
+              while (current.parentId && current.parentId !== baseParentId && current.parentId !== 'root') {
+                var parent = allItems.find(function(p) { return p && p.id === current.parentId; });
+                if (parent) {
+                  pathParts.unshift(parent.name);
+                  current = parent;
+                } else {
+                  break;
+                }
+              }
+              filesToDownload.push({ id: file.id, name: file.name, zipPath: pathParts.join('/') });
+            });
+          }
+        }
+
+        if (filesToDownload.length === 0) {
+          window.showToast('未找到可打包的文件', 'info');
+          container.style.display = 'none';
+          return;
+        }
+        var zip = new JSZip();
+
+        for (var i = 0; i < filesToDownload.length; i++) {
+          var fileTask = filesToDownload[i];
+          var fileBlob = await new Promise(function(resolveTask, rejectTask) {
+            var xhr = new XMLHttpRequest();
+            var tokenParam = window.sessionToken ? '&token=' + encodeURIComponent(window.sessionToken) : '';
+            xhr.open('GET', '/api/download?id=' + encodeURIComponent(fileTask.id) + tokenParam, true);
+            xhr.responseType = 'blob';
+
+            xhr.addEventListener('progress', function(e) {
+              if (e.lengthComputable) {
+                var innerPercent = Math.round((e.loaded / e.total) * 100);
+                nameText.innerText = '[拉取数据] (' + (i + 1) + '/' + filesToDownload.length + '): ' + fileTask.name;
+                percentText.innerText = innerPercent + '%';
+                bar.style.width = innerPercent + '%';
+              }
+            });
+            xhr.onreadystatechange = function() {
+              if (xhr.readyState === XMLHttpRequest.DONE) {
+                if (xhr.status === 403) { rejectTask(new Error('NEED_AUTH')); return; }
+                if (xhr.status === 200) resolveTask(xhr.response);
+                else rejectTask(new Error('网络请求异常'));
+              }
+            };
+            xhr.send();
+          });
+          zip.file(fileTask.zipPath, fileBlob);
+        }
+
+        nameText.innerText = '[压缩打包] 正在本地无损合成 ZIP 文件...';
+        var finalZipBlob = await zip.generateAsync({ type: 'blob' }, function(metadata) {
+          var packPercent = Math.round(metadata.percent);
+          percentText.innerText = packPercent + '%';
+          bar.style.width = packPercent + '%';
+        });
+
+        var downloadUrl = URL.createObjectURL(finalZipBlob);
+        var a = document.createElement('a');
+        a.href = downloadUrl;
+        a.download = outputZipName;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(downloadUrl);
+        setTimeout(function() { container.style.display = 'none'; }, 1000);
+      } catch (err) {
+        container.style.display = 'none';
+        if (err.message === 'NEED_AUTH') {
+          window.setSessionToken('');
+          window.promptPassword(function() { window.pipelineZipDownload(targetItems, outputZipName); });
+        } else {
+          window.showToast('打包失败: ' + err.message, 'error');
+        }
+      }
+    };
+
+    window.openRenameDialog = function(id, currentName) {
+      window.currentRenameId = id;
+      var input = document.getElementById('newNameInput');
+      input.value = currentName;
+      showModal('renameOverlay', 'renameDialog');
+      setTimeout(function() { input.focus(); input.select(); }, 60);
+
+      document.getElementById('confirmRenameBtn').onclick = async function(e) {
+        var newName = input.value.trim();
+        if (!newName) return;
+        await window.wrapLoading(e.currentTarget, async function() {
+          var res = await fetch('/api/rename', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'X-Auth-Token': window.sessionToken
+            },
+            body: JSON.stringify({ id: window.currentRenameId, newName: newName })
+          });
+          if (res.status === 403) {
+            window.setSessionToken('');
+            window.closeRenameDialog();
+            window.promptPassword(function() { window.openRenameDialog(id, currentName); });
+            return;
+          }
+          if (res.ok) {
+            window.closeRenameDialog();
+            window.showToast('重命名成功！', 'success');
+            window.fetchFiles();
+          } else {
+            window.showToast('重命名失败', 'error');
+          }
+        });
+      };
+    };
+
+    window.deleteItem = function(id, isFolder, name) {
+      var title = isFolder ? '删除文件夹' : '删除文件';
+      var desc = isFolder
+        ? '确定要彻底删除文件夹「' + name + '」及其内部所有子文件吗？此操作不可撤回。'
+        : '确定要彻底删除文件「' + name + '」吗？此操作不可撤回。';
+
+      window.openConfirmModal(title, desc, async function() {
+        var res = await fetch('/api/delete', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Auth-Token': window.sessionToken
+          },
+          body: JSON.stringify({ id: id })
+        });
+        if (res.status === 403) {
+          window.setSessionToken('');
+          window.closeConfirmDialog();
+          window.promptPassword(function() { window.deleteItem(id, isFolder, name); });
+          return;
+        }
+        if (res.ok) {
+          window.showToast('项目已彻底删除', 'success');
+          window.currentItems = window.currentItems.filter(function(i) { return i.id !== id; });
+          window.renderFilteredItems();
+        } else {
+          window.showToast('删除失败', 'error');
+        }
+      });
+    };
+
+    window.executeBatchDelete = function() {
+      var checkedBoxes = document.querySelectorAll('.item-cb:checked');
+      if (checkedBoxes.length === 0) return;
+      var ids = Array.from(checkedBoxes).map(function(cb) { return cb.getAttribute('data-id'); });
+
+      window.openConfirmModal(
+        '批量删除项目',
+        '确定要彻底删除选中的 ' + ids.length + ' 个项目及其全部包含内容吗？此操作不可恢复。',
+        async function() {
+          var res = await fetch('/api/delete', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'X-Auth-Token': window.sessionToken
+            },
+            body: JSON.stringify({ ids: ids })
+          });
+          if (res.status === 403) {
+            window.setSessionToken('');
+            window.closeConfirmDialog();
+            window.promptPassword(function() { window.executeBatchDelete(); });
+            return;
+          }
+          if (res.ok) {
+            window.showToast('批量删除成功！', 'success');
+            window.fetchFiles();
+          } else {
+            window.showToast('批量删除失败', 'error');
+          }
+        }
+      );
+    };
+
+    window.handleFileSelect = async function(input) {
+      var files = Array.from(input.files).map(function(f) {
+        return { file: f, relativePath: f.webkitRelativePath || '' };
+      });
+      if (files.length === 0) return;
+      input.value = '';
+      window.uploadFilesPipeline(files);
+    };
+
+    window.uploadFilesPipeline = async function(fileEntries) {
+      var container = document.getElementById('progressContainer');
+      var bar = document.getElementById('progressBarFill');
+      var percentText = document.getElementById('progressPercent');
+      var nameText = document.getElementById('progressFileName');
+      container.style.display = 'flex';
+      bar.style.width = '0%';
+      percentText.innerText = '0%';
+      nameText.innerText = '解析上传目录结构...';
+
+      var pathToFolderIdMap = { '': window.currentFolderId };
+      var uniqueFolderPaths = new Set();
+
+      fileEntries.forEach(function(entry) {
+        var normalizedPath = (entry.relativePath || '').replace(/\\/g, '/');
+        if (normalizedPath && normalizedPath.indexOf('/') !== -1) {
+          var pathParts = normalizedPath.split('/');
+          pathParts.pop();
+          var currentCumulativePath = '';
+          pathParts.forEach(function(part) {
+            if (!part) return;
+            currentCumulativePath = currentCumulativePath ? currentCumulativePath + '/' + part : part;
+            uniqueFolderPaths.add(currentCumulativePath);
+          });
+        }
+      });
+
+      var sortedFolderPaths = Array.from(uniqueFolderPaths).sort(function(a, b) {
+        return a.split('/').length - b.split('/').length;
+      });
+
+      for (var p = 0; p < sortedFolderPaths.length; p++) {
+        var pathStr = sortedFolderPaths[p];
+        var parts = pathStr.split('/');
+        var currentFolderName = parts.pop();
+        var parentPathStr = parts.join('/');
+        var resolvedParentId = pathToFolderIdMap[parentPathStr] || window.currentFolderId;
+
+        try {
+          var res = await fetch('/api/folder/create', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'X-Auth-Token': window.sessionToken
+            },
+            body: JSON.stringify({ name: currentFolderName, parentId: resolvedParentId })
+          });
+          if (res.status === 403) {
+            window.setSessionToken('');
+            container.style.display = 'none';
+            window.promptPassword(function() { window.uploadFilesPipeline(fileEntries); });
+            return;
+          }
+          var data = await res.json();
+          pathToFolderIdMap[pathStr] = data.folder.id;
+          if (data.folder.parentId === window.currentFolderId) {
+            window.currentItems.unshift(data.folder);
+            window.renderFilteredItems();
+          }
+        } catch (e) {
+          pathToFolderIdMap[pathStr] = resolvedParentId;
+        }
+      }
+
+      var totalBytesSum = fileEntries.reduce(function(sum, entry) { return sum + (entry.file.size || 0); }, 0);
+      var uploadedBytesTracker = new Map();
+
+      function refreshAggregatedProgress() {
+        var currentUploadedSum = 0;
+        uploadedBytesTracker.forEach(function(val) { currentUploadedSum += val; });
+        var ratio = totalBytesSum > 0 ? Math.round((currentUploadedSum / totalBytesSum) * 100) : 100;
+        bar.style.width = ratio + '%';
+        percentText.innerText = ratio + '%';
+      }
+
+      var MAX_CONCURRENCY = 3;
+      var currentIndex = 0;
+      var activeThreads = 0;
+      var completedCount = 0;
+      var authFailed = false;
+
+      return new Promise(function(resolve) {
+        function dispatchNext() {
+          if (authFailed) return;
+          if (currentIndex >= fileEntries.length && activeThreads === 0) {
+            window.showToast('全部 ' + completedCount + ' 个文件上传完毕！', 'success');
+            setTimeout(function() { container.style.display = 'none'; }, 1000);
+            window.renderFilteredItems();
+            resolve();
+            return;
+          }
+          while (activeThreads < MAX_CONCURRENCY && currentIndex < fileEntries.length && !authFailed) {
+            (function(index) {
+              var entry = fileEntries[index];
+              var file = entry.file;
+              activeThreads++;
+              var targetParentId = window.currentFolderId;
+              var normalizedPath = (entry.relativePath || '').replace(/\\/g, '/');
+              if (normalizedPath && normalizedPath.indexOf('/') !== -1) {
+                var parts = normalizedPath.split('/');
+                parts.pop();
+                var pathStr = parts.join('/');
+                targetParentId = pathToFolderIdMap[pathStr] || window.currentFolderId;
+              }
+
+              var displayFileName = file.name.replace(/\\/g, '/');
+              if (displayFileName.indexOf('/') !== -1) {
+                displayFileName = displayFileName.substring(displayFileName.lastIndexOf('/') + 1);
+              }
+              nameText.innerText = '正在上传 (' + (completedCount + 1) + '/' + fileEntries.length + '): ' + displayFileName;
+
+              fireSingleXhrUpload(file, index, targetParentId)
+                .then(function(uploadedFileMeta) {
+                  completedCount++;
+                  if (uploadedFileMeta && uploadedFileMeta.parentId === window.currentFolderId) {
+                    window.currentItems.unshift(uploadedFileMeta);
+                    window.renderFilteredItems();
+                  }
+                })
+                .catch(function(err) {
+                  if (err && err.message === 'NEED_AUTH' && !authFailed) {
+                    authFailed = true;
+                    window.setSessionToken('');
+                    container.style.display = 'none';
+                    window.promptPassword(function() { window.uploadFilesPipeline(fileEntries.slice(index)); });
+                  }
+                })
+                .finally(function() {
+                  activeThreads--;
+                  dispatchNext();
+                });
+            })(currentIndex++);
+          }
+        }
+
+        function fireSingleXhrUpload(file, fileIndex, parentId) {
+          return new Promise(function(resFile, rejFile) {
+            var fd = new FormData();
+            fd.append('file', file);
+            fd.append('parentId', parentId);
+            var xhr = new XMLHttpRequest();
+            xhr.open('POST', '/api/upload', true);
+            if (window.sessionToken) xhr.setRequestHeader('X-Auth-Token', window.sessionToken);
+
+            xhr.upload.addEventListener('progress', function(e) {
+              if (e.lengthComputable) {
+                uploadedBytesTracker.set(fileIndex, e.loaded);
+                refreshAggregatedProgress();
+              }
+            });
+            xhr.onreadystatechange = function() {
+              if (xhr.readyState === XMLHttpRequest.DONE) {
+                if (xhr.status === 403) { rejFile(new Error('NEED_AUTH')); return; }
+                if (xhr.status === 200) {
+                  uploadedBytesTracker.set(fileIndex, file.size);
+                  refreshAggregatedProgress();
+                  try {
+                    var resp = JSON.parse(xhr.responseText);
+                    resFile(resp.file);
+                  } catch (e) {
+                    resFile(null);
+                  }
+                } else {
+                  uploadedBytesTracker.set(fileIndex, 0);
+                  refreshAggregatedProgress();
+                  rejFile(new Error('UPLOAD_ERROR'));
+                }
+              }
+            };
+            xhr.send(fd);
+          });
+        }
+
+        dispatchNext();
+      });
+    };
+
+    // 真正全能在线预览：支持图片、视频、音频、PDF以及 Word/Excel/PPT 文档
+    window.handlePreviewOrEdit = function(id, filename, mime, isText) {
+      if (isText) {
+        window.openEditorDialogForEdit(id, filename);
+      } else {
+        var tokenParam = window.sessionToken ? '&token=' + encodeURIComponent(window.sessionToken) : '';
+        fetch('/api/view?id=' + encodeURIComponent(id) + tokenParam, { method: 'HEAD' })
+          .then(function(res) {
+            if (res.status === 403) {
+              window.setSessionToken('');
+              window.promptPassword(function() { window.handlePreviewOrEdit(id, filename, mime, isText); });
+            } else if (res.ok) {
+              window.openPreviewDialog(id, filename, mime);
+            } else {
+              window.showToast('无法读取此文件的预览流', 'error');
+            }
+          })
+          .catch(function() {
+            window.openPreviewDialog(id, filename, mime);
+          });
+      }
+    };
+
+    window.openPreviewDialog = function(id, filename, mime) {
+      window.currentPreviewId = id;
+      var card = document.getElementById('previewCard');
+      var container = document.getElementById('previewBodyContent');
+      document.getElementById('previewHeaderTitle').textContent = filename;
+      container.innerHTML = '';
+      card.classList.remove('large-layout');
+
+      var tokenParam = window.sessionToken ? '&token=' + encodeURIComponent(window.sessionToken) : '';
+      var streamUrl = '/api/view?id=' + encodeURIComponent(id) + tokenParam;
+
+      var dlBtn = document.getElementById('previewDownloadBtn');
+      if (dlBtn) {
+        dlBtn.onclick = function() { window.downloadFile(id, filename); };
+      }
+
+      var ext = getFileExt(filename);
+      if (mime.indexOf('image/') === 0 || ['png','jpg','jpeg','gif','webp','bmp','ico','svg','avif'].indexOf(ext) !== -1) {
+        var img = document.createElement('img');
+        img.src = streamUrl;
+        img.alt = filename;
+        container.appendChild(img);
+      } else if (mime.indexOf('video/') === 0 || ['mp4','webm','ogg','mov','mkv'].indexOf(ext) !== -1) {
+        var video = document.createElement('video');
+        video.src = streamUrl;
+        video.controls = true;
+        video.autoplay = true;
+        video.playsInline = true;
+        container.appendChild(video);
+      } else if (mime.indexOf('audio/') === 0 || ['mp3','wav','flac','aac','m4a','ogg'].indexOf(ext) !== -1) {
+        var audio = document.createElement('audio');
+        audio.src = streamUrl;
+        audio.controls = true;
+        audio.autoplay = true;
+        container.appendChild(audio);
+      } else if (mime === 'application/pdf' || ext === 'pdf') {
+        card.classList.add('large-layout');
+        var iframe = document.createElement('iframe');
+        iframe.src = streamUrl;
+        container.appendChild(iframe);
+      } else if (checkIsOfficeFile(filename)) {
+        card.classList.add('large-layout');
+        // Office 文档在线查看引擎 (针对公开访问或通过微软官方网页文档查看器渲染)
+        var absoluteFileUrl = window.location.origin + streamUrl;
+        var officeViewerUrl = 'https://view.officeapps.live.com/op/view.aspx?src=' + encodeURIComponent(absoluteFileUrl);
+        var iframeOffice = document.createElement('iframe');
+        iframeOffice.src = officeViewerUrl;
+        container.appendChild(iframeOffice);
+      } else {
+        container.innerHTML = '<div style="text-align:center;color:var(--text-secondary);padding:30px;">' +
+          '<p style="margin-bottom:12px;font-size:14px;">此格式暂不支持在线直接渲染，但支持直接完整下载到本地查看。</p>' +
+          '<button class="btn btn-accent" onclick="window.downloadFile(\'' + id + '\', \'' + filename + '\')">直接下载文件</button>' +
+          '</div>';
+      }
+      showModal('previewOverlay', 'previewCard');
+    };
+
+    window.navigatePreview = function(direction) {
+      if (!window.currentPreviewId) return;
+      var previewables = window.currentItems.filter(function(item) {
+        if (!item || item.isFolder) return false;
+        var mime = item.type || '';
+        var ext = getFileExt(item.name);
+        return mime.indexOf('image/') === 0 || mime.indexOf('video/') === 0 || mime.indexOf('audio/') === 0 ||
+               mime === 'application/pdf' || ext === 'pdf' || checkIsOfficeFile(item.name) ||
+               ['png','jpg','jpeg','gif','webp','bmp','ico','svg','avif','mp4','webm','ogg','mov','mkv','mp3','wav','flac','aac','m4a'].indexOf(ext) !== -1;
+      });
+      if (previewables.length <= 1) return;
+      var idx = previewables.findIndex(function(i) { return i.id === window.currentPreviewId; });
+      if (idx === -1) return;
+      var nextIdx = (idx + direction + previewables.length) % previewables.length;
+      var nextItem = previewables[nextIdx];
+      window.handlePreviewOrEdit(nextItem.id, nextItem.name, nextItem.type || '', false);
+    };
+
+    function renderBreadcrumbs() {
+      var container = document.getElementById('breadcrumbs');
+      container.innerHTML = '';
+      window.folderHistory.forEach(function(folder, index) {
+        var item = document.createElement('span');
+        if (index === window.folderHistory.length - 1) {
+          item.className = 'breadcrumb-item active';
+          item.textContent = folder.name;
+          container.appendChild(item);
+        } else {
+          item.className = 'breadcrumb-item';
+          item.textContent = folder.name;
+          item.onclick = function() {
+            window.folderHistory = window.folderHistory.slice(0, index + 1);
+            window.currentFolderId = window.folderHistory[index].id;
+            renderBreadcrumbs();
+            window.fetchFiles();
+          };
+          container.appendChild(item);
+          var sep = document.createElement('span');
+          sep.className = 'breadcrumb-separator';
+          sep.textContent = '/';
+          container.appendChild(sep);
+        }
+      });
+    }
+
+    function enterFolder(id, name) {
+      window.clearSearch();
+      window.folderHistory.push({ id: id, name: name });
+      window.currentFolderId = id;
+      renderBreadcrumbs();
+      window.fetchFiles();
+    }
+
+    window.fetchFiles = async function() {
+      var selectAllCb = document.getElementById('selectAllCb');
+      if (selectAllCb) selectAllCb.checked = false;
+      window.updateBatchBar();
+      var headers = {};
+      if (window.sessionToken) headers['X-Auth-Token'] = window.sessionToken;
+
+      try {
+        var res = await fetch('/api/files?parentId=' + encodeURIComponent(window.currentFolderId), { headers: headers });
+        if (res.status === 403) {
+          window.setSessionToken('');
+          window.promptPassword(
+            function() { window.fetchFiles(); },
+            function() {
+              if (window.folderHistory.length > 1) {
+                window.folderHistory.pop();
+                window.currentFolderId = window.folderHistory[window.folderHistory.length - 1].id;
+                renderBreadcrumbs();
+                window.fetchFiles();
+              }
+            }
+          );
+          return;
+        }
+        if (!res.ok) {
+          window.showToast('加载文件列表失败', 'error');
+          return;
+        }
+        var items = await res.json();
+        window.currentItems = Array.isArray(items) ? items : [];
+        window.renderFilteredItems();
+      } catch (err) {
+        window.showToast('网络连接失败', 'error');
+      }
+    };
+
+    window.renderFilteredItems = function() {
+      var list = window.currentItems.slice();
+      if (window.searchKeyword) {
+        list = list.filter(function(item) {
+          return item && String(item.name || '').toLowerCase().indexOf(window.searchKeyword) !== -1;
+        });
+      }
+
+      list.sort(function(a, b) {
+        if (a.isFolder && !b.isFolder) return -1;
+        if (!a.isFolder && b.isFolder) return 1;
+        var cmp = 0;
+        if (window.sortField === 'name') {
+          cmp = String(a.name || '').localeCompare(String(b.name || ''), 'zh-CN');
+        } else if (window.sortField === 'size') {
+          cmp = (a.size || 0) - (b.size || 0);
+        } else {
+          cmp = (a.uploadedAt || a.createdAt || 0) - (b.uploadedAt || b.createdAt || 0);
+        }
+        return window.sortAsc ? cmp : -cmp;
+      });
+
+      displayItems(list);
+    };
+
+    function displayItems(items) {
+      var tbody = document.getElementById('fileListBody');
+      tbody.innerHTML = '';
+
+      var folderCount = 0;
+      var fileCount = 0;
+      var totalBytes = 0;
+      items.forEach(function(i) {
+        if (i.isFolder) folderCount++;
+        else { fileCount++; totalBytes += (i.size || 0); }
+      });
+      var summaryEl = document.getElementById('statusSummary');
+      if (summaryEl) {
+        summaryEl.textContent = '共 ' + folderCount + ' 个文件夹，' + fileCount + ' 个文件 · 总大小 ' + formatBytes(totalBytes);
+      }
+
+      if (items.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--text-secondary);padding:48px;">当前目录暂无内容（支持拖拽文件或文件夹直接上传）</td></tr>';
+        return;
+      }
+
+      items.forEach(function(item, index) {
+        var isFolder = item.isFolder === true;
+        var mime = item.type || '';
+        var ext = getFileExt(item.name);
+        var isText = !isFolder && checkIsTextFile(item.name, mime);
+        var isOffice = !isFolder && checkIsOfficeFile(item.name);
+        var isImage = !isFolder && (mime.indexOf('image/') === 0 || ['png','jpg','jpeg','gif','webp','bmp','ico','svg','avif'].indexOf(ext) !== -1);
+        var isVideo = !isFolder && (mime.indexOf('video/') === 0 || ['mp4','webm','ogg','mov','mkv'].indexOf(ext) !== -1);
+        var isAudio = !isFolder && (mime.indexOf('audio/') === 0 || ['mp3','wav','flac','aac','m4a','ogg'].indexOf(ext) !== -1);
+        var isPdf = !isFolder && (mime === 'application/pdf' || ext === 'pdf');
+        var canPreview = isImage || isVideo || isPdf || isText || isAudio || isOffice;
+
+        var iconColor = isFolder ? '#ffb900' : (isAudio ? '#8660a9' : (isVideo ? '#e3008c' : (isImage ? '#00b294' : (isPdf ? '#d83b01' : (isOffice ? '#107c41' : '#0078d4')))));
+        var iconPath = isFolder
+          ? 'M10 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2h-8l-2-2z'
+          : (isAudio
+              ? 'M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z'
+              : 'M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z');
+
+        var row = document.createElement('tr');
+        row.className = 'file-row';
+        row.id = 'row-' + item.id;
+        row.style.animationDelay = Math.min(index * 0.02, 0.3) + 's';
+
+        var td1 = '<td class="col-cb"><input type="checkbox" class="item-cb"></td>';
+        var nameClass = isFolder ? 'file-name-text folder-link' : (canPreview ? 'file-name-text file-link' : 'file-name-text');
+        var lockBadge = item.isProtected ? '<span class="lock-tag">加密</span>' : '';
+        var td2 = '<td><div class="file-name-container"><svg class="file-icon" style="fill:' + iconColor + ';" viewBox="0 0 24 24"><path d="' + iconPath + '"/></svg><span class="' + nameClass + '" title="' + escapeHtml(item.name) + '">' + escapeHtml(item.name) + '</span>' + lockBadge + '</div></td>';
+        var td3 = '<td>' + (isFolder ? '-' : formatBytes(item.size)) + '</td>';
+        var td4 = '<td>' + new Date(item.uploadedAt || item.createdAt || Date.now()).toLocaleString() + '</td>';
+
+        var lockClass = item.isProtected ? 'btn-icon btn-protect active-lock' : 'btn-icon btn-protect';
+        var lockPath = item.isProtected
+          ? 'M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z'
+          : 'M12 17c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm6-9h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6h1.9c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2z';
+        var lockTitle = item.isProtected ? '解除密码保护' : '添加密码保护';
+
+        var previewBtnHtml = canPreview
+          ? '<button class="btn-icon btn-preview" title="' + (isText ? '在线编辑文本' : '在线预览') + '"><svg viewBox="0 0 24 24"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg></button>'
+          : '';
+
+        var td5 = '<td><div class="actions-cell">' +
+          '<button class="' + lockClass + '" title="' + lockTitle + '"><svg viewBox="0 0 24 24"><path d="' + lockPath + '"/></svg></button>' +
+          previewBtnHtml +
+          '<button class="btn-icon btn-download" title="下载"><svg viewBox="0 0 24 24"><path d="M5 20h14v-2H5v2zM19 9h-4V3H9v6H5l7 7 7-7z"/></svg></button>' +
+          '<button class="btn-icon btn-rename" title="重命名"><svg viewBox="0 0 24 24"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg></button>' +
+          '<button class="btn-icon btn-delete" title="删除"><svg viewBox="0 0 24 24"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg></button>' +
+          '</div></td>';
+
+        row.innerHTML = td1 + td2 + td3 + td4 + td5;
+
+        var cbEl = row.querySelector('.item-cb');
+        cbEl.onclick = function(e) { window.handleItemSelect(e, cbEl); };
+        cbEl.setAttribute('data-id', item.id);
+        cbEl.setAttribute('data-name', item.name);
+        cbEl.setAttribute('data-folder', isFolder);
+        cbEl.setAttribute('data-protected', Boolean(item.isProtected));
+
+        var nameEl = row.querySelector('.file-name-text');
+        if (isFolder) {
+          nameEl.onclick = function() { enterFolder(item.id, item.name); };
+        } else if (canPreview) {
+          nameEl.onclick = function() { window.handlePreviewOrEdit(item.id, item.name, mime, isText); };
+        }
+
+        row.querySelector('.btn-protect').onclick = function() { window.toggleSingleProtect(item.id, !item.isProtected); };
+        if (canPreview) {
+          row.querySelector('.btn-preview').onclick = function() { window.handlePreviewOrEdit(item.id, item.name, mime, isText); };
+        }
+        row.querySelector('.btn-download').onclick = function() {
+          if (isFolder) window.downloadFolder(item.id, item.name);
+          else window.downloadFile(item.id, item.name);
+        };
+        row.querySelector('.btn-rename').onclick = function() { window.openRenameDialog(item.id, item.name); };
+        row.querySelector('.btn-delete').onclick = function() { window.deleteItem(item.id, isFolder, item.name); };
+
+        tbody.appendChild(row);
+      });
+    }
+
+    async function traverseFileTree(entry, path) {
+      path = path || '';
+      if (entry.isFile) {
+        return new Promise(function(resolve) {
+          entry.file(function(file) {
+            resolve([{ file: file, relativePath: path ? path + '/' + file.name : '' }]);
+          }, function() { resolve([]); });
+        });
+      } else if (entry.isDirectory) {
+        var dirReader = entry.createReader();
+        var allEntries = [];
+        var readBatch = function() {
+          return new Promise(function(resolve) {
+            dirReader.readEntries(function(entries) {
+              if (!entries || entries.length === 0) {
+                resolve();
+              } else {
+                allEntries = allEntries.concat(Array.from(entries));
+                readBatch().then(resolve);
+              }
+            }, function() { resolve(); });
+          });
+        };
+        await readBatch();
+        var subResults = [];
+        var nextPath = path ? path + '/' + entry.name : entry.name;
+        for (var i = 0; i < allEntries.length; i++) {
+          var children = await traverseFileTree(allEntries[i], nextPath);
+          subResults = subResults.concat(children);
+        }
+        return subResults;
+      }
+      return [];
+    }
+
+    function initDragAndDrop() {
+      var app = document.getElementById('appContainer');
+      var overlay = document.getElementById('dropzoneOverlay');
+      var dragCounter = 0;
+
+      window.addEventListener('dragenter', function(e) {
+        e.preventDefault();
+        dragCounter++;
+        if (overlay) overlay.classList.add('active');
+      });
+      window.addEventListener('dragover', function(e) { e.preventDefault(); });
+      window.addEventListener('dragleave', function(e) {
+        e.preventDefault();
+        dragCounter--;
+        if (dragCounter <= 0) {
+          dragCounter = 0;
+          if (overlay) overlay.classList.remove('active');
+        }
+      });
+      window.addEventListener('drop', async function(e) {
+        e.preventDefault();
+        dragCounter = 0;
+        if (overlay) overlay.classList.remove('active');
+
+        var items = e.dataTransfer && e.dataTransfer.items;
+        if (!items || items.length === 0) return;
+
+        var collected = [];
+        var entries = [];
+        for (var i = 0; i < items.length; i++) {
+          if (items[i].webkitGetAsEntry) {
+            var entry = items[i].webkitGetAsEntry();
+            if (entry) entries.push(entry);
+          } else if (items[i].kind === 'file') {
+            var f = items[i].getAsFile();
+            if (f) collected.push({ file: f, relativePath: '' });
+          }
+        }
+        for (var j = 0; j < entries.length; j++) {
+          var sub = await traverseFileTree(entries[j], '');
+          collected = collected.concat(sub);
+        }
+        if (collected.length > 0) {
+          window.uploadFilesPipeline(collected);
+        }
+      });
+    }
+
+    function initShortcutsAndEditorEvents() {
+      var textarea = document.getElementById('editorTextarea');
+      if (textarea) {
+        textarea.addEventListener('input', updateEditorStats);
+        textarea.addEventListener('keydown', function(e) {
+          if (e.key === 'Tab') {
+            e.preventDefault();
+            var start = this.selectionStart;
+            var end = this.selectionEnd;
+            this.value = this.value.substring(0, start) + '  ' + this.value.substring(end);
+            this.selectionStart = this.selectionEnd = start + 2;
+            updateEditorStats();
+          }
+        });
+      }
+
+      window.addEventListener('keydown', function(e) {
+        var editorOpen = document.getElementById('editorOverlay').style.display === 'flex';
+        if (editorOpen && (e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') {
+          e.preventDefault();
+          document.getElementById('confirmEditorSaveBtn').click();
+          return;
+        }
+        if (e.key === 'Escape') {
+          window.closePreviewDialog();
+          window.closeFolderDialog();
+          window.closeRenameDialog();
+          window.closeConfirmDialog();
+          window.closeAuthDialog();
+          if (editorOpen) window.closeEditorDialog();
+        }
+      });
+    }
+
+    function windowInitPipeline() {
+      var fileIn = document.getElementById('fileInput');
+      var folderIn = document.getElementById('folderInput');
+      if (fileIn) fileIn.onchange = function() { window.handleFileSelect(this); };
+      if (folderIn) folderIn.onchange = function() { window.handleFileSelect(this); };
+      window.updateAuthBadgeUI();
+      initDragAndDrop();
+      initShortcutsAndEditorEvents();
+      renderBreadcrumbs();
+      window.fetchFiles();
+    }
+
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', windowInitPipeline);
+    } else {
+      windowInitPipeline();
+    }
+
+    function hideModal(overlayId, dialogId) {
+      var overlay = document.getElementById(overlayId);
+      var dialog = document.getElementById(dialogId);
+      if (overlay && dialog) {
+        overlay.classList.remove('fade-in');
+        dialog.classList.remove('show');
+        setTimeout(function() { overlay.style.display = 'none'; }, 220);
+      }
+    }
+    function showModal(overlayId, dialogId) {
+      var overlay = document.getElementById(overlayId);
+      var dialog = document.getElementById(dialogId);
+      if (overlay && dialog) {
+        overlay.style.display = 'flex';
+        setTimeout(function() {
+          overlay.classList.add('fade-in');
+          dialog.classList.add('show');
+        }, 10);
+      }
+    }
+
+    function formatBytes(bytes, decimals) {
+      decimals = decimals === undefined ? 2 : decimals;
+      if (!+bytes) return '0 B';
+      var k = 1024;
+      var dm = decimals < 0 ? 0 : decimals;
+      var sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
+      var i = Math.floor(Math.log(bytes) / Math.log(k));
+      return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
+    }
+    function escapeHtml(string) {
+      return String(string || '').replace(/[&<>"']/g, function(s) {
+        return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[s];
+      });
+    }
+  </script>
+</body>
+</html>
