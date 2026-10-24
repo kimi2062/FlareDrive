@@ -5,6 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>IKIMI Drive</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+      <script src="https://cdn.jsdelivr.net/npm/docx-preview@0.3.3/dist/docx-preview.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js"></script>
   <style>
     :root {
       --font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
@@ -1693,14 +1696,39 @@
         var iframe = document.createElement('iframe');
         iframe.src = streamUrl;
         container.appendChild(iframe);
-      } else if (checkIsOfficeFile(filename)) {
-        card.classList.add('large-layout');
-        // Office 文档在线查看引擎 (针对公开访问或通过微软官方网页文档查看器渲染)
-        var absoluteFileUrl = window.location.origin + streamUrl;
-        var officeViewerUrl = 'https://view.officeapps.live.com/op/view.aspx?src=' + encodeURIComponent(absoluteFileUrl);
-        var iframeOffice = document.createElement('iframe');
-        iframeOffice.src = officeViewerUrl;
-        container.appendChild(iframeOffice);
+          } else if (checkIsOfficeFile(filename)) {
+      card.classList.add('large-layout');
+      var renderBox = document.createElement('div');
+      renderBox.style.cssText = 'width:100%;height:100%;overflow:auto;background:#fff;color:#333;padding:16px;box-sizing:border-box;';
+      renderBox.innerHTML = '<div style="text-align:center;padding:40px;color:#888;">正在本地极速解析文档中...</div>';
+      container.appendChild(renderBox);
+
+      fetch(streamUrl)
+        .then(function(res) {
+          if (!res.ok) throw new Error('status ' + res.status);
+          return res.arrayBuffer();
+        })
+        .then(function(buf) {
+          renderBox.innerHTML = '';
+          var lowExt = (ext || '').toLowerCase();
+          if (lowExt === 'docx') {
+            docx.renderAsync(buf, renderBox).catch(function() {
+              renderBox.innerHTML = '<div style="text-align:center;padding:30px;color:#e81123;">Word排版解析异常，请直接点击右上角“下载到本地”查看</div>';
+            });
+          } else if (lowExt === 'xlsx' || lowExt === 'xls') {
+            var wb = XLSX.read(buf, { type: 'array' });
+            var sheet = wb.Sheets[wb.SheetNames[0]];
+            var html = XLSX.utils.sheet_to_html(sheet);
+            renderBox.innerHTML = '<div style="overflow:auto;font-size:12px;">' + html + '</div>';
+          } else {
+            renderBox.innerHTML = '<div style="text-align:center;padding:30px;color:#888;">该Office格式不支持本地直接排版，请点击右上角“下载到本地”查看</div>';
+          }
+        })
+        .catch(function() {
+          renderBox.innerHTML = '<div style="text-align:center;padding:30px;color:#e81123;">文档加载失败，请检查是否处于已解锁状态，或点击右上角下载查看</div>';
+        });
+    }
+
       } else {
         container.innerHTML = '<div style="text-align:center;color:var(--text-secondary);padding:30px;">' +
           '<p style="margin-bottom:12px;font-size:14px;">此格式暂不支持在线直接渲染，但支持直接完整下载到本地查看。</p>' +
