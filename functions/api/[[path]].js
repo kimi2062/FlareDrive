@@ -68,6 +68,7 @@ export async function onRequest(context) {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
+
   if (path === "files" && request.method === "GET") {
     const parentId = url.searchParams.get("parentId") || "root";
     const db = await getDB(env);
@@ -110,7 +111,6 @@ export async function onRequest(context) {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
-
   if (path === "upload" && request.method === "POST") {
     const formData = await request.formData();
     const file = formData.get("file");
@@ -202,7 +202,10 @@ export async function onRequest(context) {
 
     if (!item) return new Response("Not Found", { status: 404, headers: corsHeaders });
     if (item.isProtected && !verifyToken(request)) {
-      return new Response(JSON.stringify({ error: "LOCKED_FILE" }), { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      return new Response(JSON.stringify({ error: "LOCKED_FILE" }), {
+        status: 403,
+        headers: { ...corsHeaders, "Content-Type": "application/json" }
+      });
     }
 
     if (request.method === "HEAD") {
@@ -218,6 +221,7 @@ export async function onRequest(context) {
 
     return new Response(obj.body, { headers });
   }
+
   if (path === "text/create" && request.method === "POST") {
     const { name, parentId, content } = await request.json();
     const fileId = crypto.randomUUID();
@@ -246,7 +250,6 @@ export async function onRequest(context) {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
-
   if (path === "text/save" && request.method === "POST") {
     const { id, name, content } = await request.json();
     const db = await getDB(env);
@@ -329,6 +332,13 @@ export async function onRequest(context) {
   }
 
   if (path === "delete" && request.method === "POST") {
+    if (!verifyToken(request)) {
+      return new Response(JSON.stringify({ error: "AUTH_REQUIRED" }), {
+        status: 403,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     const body = await request.json();
     const ids = body.ids || (body.id ? [body.id] : []);
     const db = await getDB(env);
@@ -355,6 +365,49 @@ export async function onRequest(context) {
     await saveDB(env, db);
 
     return new Response(JSON.stringify({ success: true }), {
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  }
+
+  if (path === "sync" && request.method === "GET") {
+    if (!verifyToken(request)) {
+      return new Response("Forbidden", { status: 403, headers: corsHeaders });
+    }
+    const db = await getDB(env);
+    const existingIds = new Set(db.items.map((i) => i.id));
+    let truncated = true;
+    let cursor = undefined;
+    let addedCount = 0;
+
+    while (truncated) {
+      const list = await env.BUCKET.list({ cursor });
+      for (const obj of list.objects) {
+        if (obj.key === DB_FILE || existingIds.has(obj.key)) continue;
+
+        let cleanName = obj.key;
+        if (cleanName.includes("/")) {
+          cleanName = cleanName.split("/").pop();
+        }
+
+        db.items.push({
+          id: obj.key,
+          name: cleanName || obj.key,
+          parentId: "root",
+          isFolder: false,
+          size: obj.size,
+          type: obj.httpMetadata?.contentType || "application/octet-stream",
+          uploadedAt: obj.uploaded ? new Date(obj.uploaded).getTime() : Date.now(),
+          isProtected: false,
+        });
+        existingIds.add(obj.key);
+        addedCount++;
+      }
+      truncated = list.truncated;
+      cursor = list.cursor;
+    }
+
+    await saveDB(env, db);
+    return new Response(JSON.stringify({ success: true, addedCount }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
